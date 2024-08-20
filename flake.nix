@@ -40,9 +40,9 @@
       in
       rec {
         # For `nix build` & `nix run`:
-        defaultPackage = packages.bevy_template;
+        defaultPackage = packages.pount;
         packages = rec {
-          bevy_template = naersk'.buildPackage {
+          pount = naersk'.buildPackage {
             src = ./.;
             nativeBuildInputs = nativeBuildInputs;
             buildInputs = buildInputs;
