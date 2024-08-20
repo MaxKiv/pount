@@ -1,3 +1,4 @@
+# from https://blog.graysonhead.net/posts/nix-flake-rust-bevy/
 {
   inputs = {
     flake-utils.url = "github:numtide/flake-utils";
