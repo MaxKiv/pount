@@ -1,17 +1,17 @@
 mod asset_loader;
 mod camera;
-mod card;
+pub mod card;
+mod coordinates;
 mod debug;
 mod movement;
 mod schedule;
 mod window;
 
 use bevy::prelude::*;
-use bevy::window::WindowMode::Fullscreen;
 
+use crate::card::plugin::CardPlugin;
 use asset_loader::AssetLoaderPlugin;
 use camera::CameraPlugin;
-use card::CardPlugin;
 use debug::DebugPlugin;
 use movement::MovementPlugin;
 use schedule::SchedulePlugin;

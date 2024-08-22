@@ -1,14 +1,6 @@
 use bevy::prelude::*;
 
-use crate::{card::Card, schedule::InGameSet};
-
-// const VELOCITY: Vec3 = Vec3::new(0.01, 0.01, 0.01);
-const POSITION: Vec3 = Vec3::new(1.0, 1.0, 1.0);
-
-#[derive(Component, Debug)]
-pub struct Velocity {
-    pub value: Vec3,
-}
+use crate::{card::spawn::CardMarker, schedule::InGameSet};
 
 #[derive(Resource)]
 struct MoveTimer(Timer);
@@ -28,7 +20,7 @@ fn setup_timer(mut commands: Commands) {
 }
 
 fn move_entities(
-    mut query: Query<&mut Transform, With<Card>>,
+    mut query: Query<&mut Transform, With<CardMarker>>,
     time: Res<Time>,
     mut timer: ResMut<MoveTimer>,
 ) {

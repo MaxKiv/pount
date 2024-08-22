@@ -15,7 +15,11 @@ impl Plugin for CameraPlugin {
         app.add_systems(Startup, spawn_camera);
         app.add_systems(
             Update,
-            (drag_camera, zoom_camera)
+            (
+                drag_camera,
+                zoom_control_mouse_scroll,
+                zoom_control_keyboard,
+            )
                 .chain()
                 .in_set(InGameSet::MutateCamera),
         );
@@ -68,7 +72,7 @@ fn drag_camera(
     }
 }
 
-fn zoom_camera(
+fn zoom_control_mouse_scroll(
     mut evr_scroll: EventReader<MouseWheel>,
     mut query: Query<&mut Transform, With<CameraMarker>>,
     mut last_camera_translation: Local<Option<Vec3>>,
@@ -105,4 +109,21 @@ fn zoom_camera(
             }
         }
     }
+}
+
+fn zoom_control_keyboard(
+    input: Res<ButtonInput<KeyCode>>,
+    mut camera_query: Query<&mut OrthographicProjection, With<CameraMarker>>,
+) {
+    let mut projection = camera_query.single_mut();
+
+    if input.pressed(KeyCode::Minus) {
+        projection.scale += 0.2;
+    }
+
+    if input.pressed(KeyCode::Equal) {
+        projection.scale -= 0.2;
+    }
+
+    projection.scale = projection.scale.clamp(0.2, 5.);
 }
