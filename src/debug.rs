@@ -2,11 +2,11 @@ use bevy::{prelude::*, window::WindowResized};
 use std::any::type_name;
 
 use crate::{
-    card::spawn::{CardMarker, ColorComponent},
+    card::bundle::{CardMarker, ColorComponent, Position, Weight},
     schedule::InGameSet,
 };
 
-const LOG_PERIOD: f32 = 0.5;
+const LOG_PERIOD: f32 = 1.0;
 
 pub struct DebugPlugin;
 
@@ -25,13 +25,31 @@ impl Plugin for DebugPlugin {
         app.add_systems(
             Update,
             (
-                log_entity_position::<crate::camera::CameraMarker>,
-                log_entity_position::<CardMarker>,
+                // log_entity_position::<crate::camera::CameraMarker>,
+                log_card,
+                // log_entity_position::<CardMarker>,
                 log_window_dimensions_on_resize,
             )
                 .in_set(InGameSet::LogState),
         );
         app.add_systems(Startup, setup_timer);
+    }
+}
+
+fn log_card(
+    query: Query<(Entity, &Position, &Weight, &ColorComponent), With<CardMarker>>,
+    time: Res<Time>,
+    mut timer: ResMut<LogTimer>,
+) {
+    if timer.0.tick(time.delta()).finished() {
+        for (_, position, weight, color) in query.iter() {
+            info!(
+                "{:?} {:?} Card at position: {:?}",
+                color,
+                weight.weight(),
+                position.pos()
+            );
+        }
     }
 }
 

@@ -2,7 +2,8 @@ use bevy::prelude::*;
 
 #[derive(Debug, Resource, Default)]
 pub struct AssetStore {
-    pub card: Handle<Scene>,
+    // pub card: Handle<Scene>,
+    pub font: Handle<Font>,
 }
 
 pub struct AssetLoaderPlugin;
@@ -16,6 +17,7 @@ impl Plugin for AssetLoaderPlugin {
 
 fn load_assets(mut asset_store: ResMut<AssetStore>, asset_server: Res<AssetServer>) {
     *asset_store = AssetStore {
-        card: asset_server.load("cube.glb#Scene0"),
+        // card: asset_server.load("cube.glb#Scene0"),
+        font: asset_server.load("fonts/FiraSans-Bold.ttf"),
     }
 }

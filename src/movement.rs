@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use crate::{card::spawn::CardMarker, schedule::InGameSet};
+use crate::{card::bundle::CardMarker, schedule::InGameSet};
 
 #[derive(Resource)]
 struct MoveTimer(Timer);

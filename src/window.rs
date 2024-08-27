@@ -11,7 +11,7 @@ impl Plugin for WindowPlugin {
         app.add_plugins(DefaultPlugins.set(bevy::window::WindowPlugin {
             primary_window: Some(Window {
                 resolution: (1920.0, 1080.0).into(),
-                title: "Brakke punto".into(),
+                title: "pount".into(),
                 mode: Fullscreen,
                 ..default()
             }),

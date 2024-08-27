@@ -1,3 +1,4 @@
+pub mod bundle;
 pub mod plugin;
 pub mod sequence;
 pub mod spawn;

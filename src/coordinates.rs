@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-const CARDSIZE: f32 = 150.0;
+const TILESIZE: f32 = 125.0;
 
 #[derive(Debug)]
 pub struct LogicalCoordinates {
@@ -51,7 +51,7 @@ impl ActuallyLogicalCoordinates {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct TileCoordinates {
     pub transform: Transform,
 }
@@ -65,7 +65,7 @@ impl TileCoordinates {
 impl From<ActuallyLogicalCoordinates> for TileCoordinates {
     fn from(value: ActuallyLogicalCoordinates) -> Self {
         // let discrete = get_card_grid_position(value);
-        let tile = value.transform().translation / Vec3::new(CARDSIZE, CARDSIZE, 1.0);
+        let tile = value.transform().translation / Vec3::new(TILESIZE, TILESIZE, 1.0);
         let tile = tile.round();
 
         Self {
@@ -80,7 +80,7 @@ impl From<ActuallyLogicalCoordinates> for TileCoordinates {
 impl From<TileCoordinates> for ActuallyLogicalCoordinates {
     fn from(value: TileCoordinates) -> Self {
         // let discrete = get_card_grid_position(value);
-        let tile = value.transform().translation * Vec3::new(CARDSIZE, CARDSIZE, 1.0);
+        let tile = value.transform().translation * Vec3::new(TILESIZE, TILESIZE, 1.0);
 
         Self {
             transform: Transform {

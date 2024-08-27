@@ -1,8 +1,10 @@
 use bevy::{prelude::*, reflect::Array};
 
-use crate::coordinates::{ActuallyLogicalCoordinates, LogicalCoordinates, TileCoordinates};
-
-const CARD_DIMENSIONS: Vec2 = Vec2::new(135.0, 135.0);
+use crate::{
+    asset_loader::AssetStore,
+    card::bundle::{CardBundle, CardMarker},
+    coordinates::{ActuallyLogicalCoordinates, LogicalCoordinates, TileCoordinates},
+};
 
 const CARD_COLORS: [Color; 4] = [
     Color::SALMON,
@@ -10,59 +12,6 @@ const CARD_COLORS: [Color; 4] = [
     Color::GOLD,
     Color::SEA_GREEN,
 ];
-
-// const GRID_Y: [f32; 10] = [
-//     0.0, 80.0, 160.0, 240.0, 320.0, 400.0, 480.0, 560.0, 640.0, 720.0,
-// ];
-
-#[derive(Component, Debug)]
-pub struct CardMarker;
-
-#[derive(Component, Debug)]
-pub struct Weight(i32);
-
-#[derive(Component, Debug)]
-pub struct ColorComponent(Color);
-
-impl ColorComponent {
-    pub fn color(&self) -> Color {
-        self.0
-    }
-}
-
-#[derive(Bundle)]
-pub struct CardBundle {
-    pub value: Weight,
-    pub color: ColorComponent,
-    pub sprite: SpriteBundle,
-}
-
-impl std::fmt::Debug for CardBundle {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("CardBundle")
-            .field("value", &self.value)
-            .field("color", &self.color)
-            .finish()
-    }
-}
-
-impl CardBundle {
-    pub fn new(value: i32, color: Color, at_position: ActuallyLogicalCoordinates) -> Self {
-        Self {
-            value: Weight(value),
-            color: ColorComponent(color),
-            sprite: SpriteBundle {
-                sprite: Sprite {
-                    color,
-                    custom_size: Some(CARD_DIMENSIONS),
-                    ..Default::default()
-                },
-                transform: at_position.transform(),
-                ..Default::default()
-            },
-        }
-    }
-}
 
 #[derive(Resource)]
 pub struct ColorIndex {
@@ -80,6 +29,7 @@ pub fn spawn_card(
     keyboard_input: Res<ButtonInput<KeyCode>>,
     windows: Query<&Window>,
     mut color_index: ResMut<ColorIndex>,
+    asset_store: Res<AssetStore>,
 ) {
     if keyboard_input.just_pressed(KeyCode::Space) {
         if let Some(cursor_position) = windows.single().cursor_position() {
@@ -90,19 +40,41 @@ pub fn spawn_card(
                 logical_coordinates,
                 windows.single().height(),
             );
-            info!("logical coordinates: {:?}", game_coordinates);
+            // info!("logical coordinates: {:?}", game_coordinates);
 
             // let card_position = get_card_grid_position(card_position);
-            let discrete_coordinates: TileCoordinates = game_coordinates.into();
+            let tile_coordinates: TileCoordinates = game_coordinates.into();
 
-            let card_position = discrete_coordinates.transform.translation;
+            let card_position = tile_coordinates.transform.translation;
             info!("spawning card at: {:?}", card_position);
 
             let color = next_card_color(&mut color_index);
-            commands.spawn((
-                CardBundle::new(0, color, discrete_coordinates.into()),
-                CardMarker,
-            ));
+            let card_entity = commands
+                .spawn((
+                    CardBundle::new(0, color, tile_coordinates.clone()),
+                    CardMarker,
+                ))
+                .id();
+
+            // Spawn the text entity as a child of the card entity
+            commands.entity(card_entity).with_children(|parent| {
+                let mut text_coordinates = tile_coordinates.transform();
+                text_coordinates.translation += Vec3::new(0.0, 0.0, 1.0);
+
+                parent.spawn(TextBundle {
+                    text: Text::from_section(
+                        0.to_string(),
+                        TextStyle {
+                            font: asset_store.font.clone(),
+                            font_size: 60.0,
+                            color: Color::WHITE,
+                        },
+                    ),
+                    // The transform to overlay the text on the sprite
+                    transform: text_coordinates,
+                    ..Default::default()
+                });
+            });
         }
     }
 }
