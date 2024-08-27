@@ -16,4 +16,6 @@ opt-level = 1
 opt-level = 3
 
 [features]
+# Enable this for fast builds - Dynamic link bevy libs
+# Debugging in nvim via codelldb will break though, which can be fixed but im lazy
 default = ["bevy/dynamic_linking"]

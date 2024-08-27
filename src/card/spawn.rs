@@ -1,6 +1,6 @@
 use bevy::{prelude::*, reflect::Array};
 
-use crate::coordinates::{DiscretisedGameCoordinates, GameCoordinates, LogicalCoordinates};
+use crate::coordinates::{ActuallyLogicalCoordinates, LogicalCoordinates, TileCoordinates};
 
 const CARD_DIMENSIONS: Vec2 = Vec2::new(135.0, 135.0);
 
@@ -19,7 +19,7 @@ const CARD_COLORS: [Color; 4] = [
 pub struct CardMarker;
 
 #[derive(Component, Debug)]
-pub struct IntegerValue(i32);
+pub struct Weight(i32);
 
 #[derive(Component, Debug)]
 pub struct ColorComponent(Color);
@@ -32,7 +32,7 @@ impl ColorComponent {
 
 #[derive(Bundle)]
 pub struct CardBundle {
-    pub value: IntegerValue,
+    pub value: Weight,
     pub color: ColorComponent,
     pub sprite: SpriteBundle,
 }
@@ -47,17 +47,17 @@ impl std::fmt::Debug for CardBundle {
 }
 
 impl CardBundle {
-    pub fn new(value: i32, color: Color, at_position: DiscretisedGameCoordinates) -> Self {
+    pub fn new(value: i32, color: Color, at_position: ActuallyLogicalCoordinates) -> Self {
         Self {
-            value: IntegerValue(value),
+            value: Weight(value),
             color: ColorComponent(color),
             sprite: SpriteBundle {
                 sprite: Sprite {
                     color,
-                    custom_size: Some(CARD_DIMENSIONS), // 30x30 white square
+                    custom_size: Some(CARD_DIMENSIONS),
                     ..Default::default()
                 },
-                transform: at_position.transform,
+                transform: at_position.transform(),
                 ..Default::default()
             },
         }
@@ -86,18 +86,23 @@ pub fn spawn_card(
             // info!("Cursor at position {:?}", cursor_position);
 
             let logical_coordinates = LogicalCoordinates::from_cursor_position(cursor_position);
-            let game_coordinates =
-                GameCoordinates::from_logical(logical_coordinates, windows.single().height());
+            let game_coordinates = ActuallyLogicalCoordinates::from_logical(
+                logical_coordinates,
+                windows.single().height(),
+            );
             info!("logical coordinates: {:?}", game_coordinates);
 
             // let card_position = get_card_grid_position(card_position);
-            let discrete_coordinates: DiscretisedGameCoordinates = game_coordinates.into();
+            let discrete_coordinates: TileCoordinates = game_coordinates.into();
 
             let card_position = discrete_coordinates.transform.translation;
             info!("spawning card at: {:?}", card_position);
 
             let color = next_card_color(&mut color_index);
-            commands.spawn((CardBundle::new(0, color, discrete_coordinates), CardMarker));
+            commands.spawn((
+                CardBundle::new(0, color, discrete_coordinates.into()),
+                CardMarker,
+            ));
         }
     }
 }

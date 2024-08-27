@@ -1,10 +1,6 @@
-use std::f32::consts::PI;
+use bevy::prelude::*;
 
-use bevy::{prelude::*, transform};
-
-const GRID: [f32; 10] = [
-    0.0, 150.0, 300.0, 450.0, 600.0, 750.0, 900.0, 1050.0, 1200.0, 1350.0,
-];
+const CARDSIZE: f32 = 150.0;
 
 #[derive(Debug)]
 pub struct LogicalCoordinates {
@@ -25,12 +21,20 @@ impl LogicalCoordinates {
     }
 }
 
-#[derive(Debug, Clone)]
-pub struct GameCoordinates {
+#[derive(Clone)]
+pub struct ActuallyLogicalCoordinates {
     transform: Transform,
 }
 
-impl GameCoordinates {
+impl std::fmt::Debug for ActuallyLogicalCoordinates {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("GameCoordinates")
+            .field("translation", &self.transform.translation)
+            .finish()
+    }
+}
+
+impl ActuallyLogicalCoordinates {
     pub fn new(transform: Transform) -> Self {
         Self { transform }
     }
@@ -38,56 +42,51 @@ impl GameCoordinates {
     pub fn transform(&self) -> Transform {
         self.transform
     }
-}
 
-impl GameCoordinates {
     pub fn from_logical(mut value: LogicalCoordinates, window_height: f32) -> Self {
         let translation = value.transform.translation;
         value.transform.translation =
             Vec3::new(translation.x, window_height - translation.y, translation.z);
-        GameCoordinates::new(value.transform)
+        ActuallyLogicalCoordinates::new(value.transform)
     }
 }
 
 #[derive(Debug)]
-pub struct DiscretisedGameCoordinates {
+pub struct TileCoordinates {
     pub transform: Transform,
 }
 
-impl From<GameCoordinates> for DiscretisedGameCoordinates {
-    fn from(value: GameCoordinates) -> Self {
+impl TileCoordinates {
+    pub fn transform(&self) -> Transform {
+        self.transform
+    }
+}
+
+impl From<ActuallyLogicalCoordinates> for TileCoordinates {
+    fn from(value: ActuallyLogicalCoordinates) -> Self {
+        // let discrete = get_card_grid_position(value);
+        let tile = value.transform().translation / Vec3::new(CARDSIZE, CARDSIZE, 1.0);
+        let tile = tile.round();
+
         Self {
             transform: Transform {
-                translation: get_card_grid_position(value),
+                translation: tile,
                 ..default()
             },
         }
     }
 }
 
-fn get_card_grid_position(card_position: GameCoordinates) -> Vec3 {
-    Vec3::new(
-        snap_to(card_position.transform().translation.x, &GRID),
-        snap_to(card_position.transform().translation.y, &GRID),
-        card_position.transform().translation.z,
-    )
-}
+impl From<TileCoordinates> for ActuallyLogicalCoordinates {
+    fn from(value: TileCoordinates) -> Self {
+        // let discrete = get_card_grid_position(value);
+        let tile = value.transform().translation * Vec3::new(CARDSIZE, CARDSIZE, 1.0);
 
-fn snap_to(value: f32, grid: &[f32; 10]) -> f32 {
-    // info!("snapping {:?} to {:?}", value, grid);
-    let mut last_difference = f32::MAX;
-    let mut output = 0.0;
-
-    for gridpoint in grid {
-        let difference_to_gridpoint = f32::abs(value - gridpoint);
-        if difference_to_gridpoint < last_difference {
-            last_difference = difference_to_gridpoint;
-            output = *gridpoint;
-        } else {
-            break;
+        Self {
+            transform: Transform {
+                translation: tile,
+                ..default()
+            },
         }
     }
-
-    // info!("result of snap: {:?}", output);
-    output
 }

@@ -13,7 +13,6 @@ use crate::card::plugin::CardPlugin;
 use asset_loader::AssetLoaderPlugin;
 use camera::CameraPlugin;
 use debug::DebugPlugin;
-use movement::MovementPlugin;
 use schedule::SchedulePlugin;
 use window::WindowPlugin;
 
