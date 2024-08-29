@@ -1,8 +1,10 @@
 use bevy::{prelude::*, reflect::Array};
 
+pub const TEXT_DIMENSIONS: f32 = CARD_DIMENSIONS.x / 2.0;
+
 use crate::{
     asset_loader::AssetStore,
-    card::bundle::{CardBundle, CardMarker},
+    card::bundle::{CardBundle, CardMarker, ColorComponent, TilePosition, Weight, CARD_DIMENSIONS},
     coordinates::{ActuallyLogicalCoordinates, LogicalCoordinates, TileCoordinates},
 };
 
@@ -24,6 +26,9 @@ impl ColorIndex {
     }
 }
 
+#[derive(Component, Debug)]
+pub struct TextMarker;
+
 pub fn spawn_card(
     mut commands: Commands,
     keyboard_input: Res<ButtonInput<KeyCode>>,
@@ -33,48 +38,59 @@ pub fn spawn_card(
 ) {
     if keyboard_input.just_pressed(KeyCode::Space) {
         if let Some(cursor_position) = windows.single().cursor_position() {
-            // info!("Cursor at position {:?}", cursor_position);
+            let card_value = 0;
 
             let logical_coordinates = LogicalCoordinates::from_cursor_position(cursor_position);
             let game_coordinates = ActuallyLogicalCoordinates::from_logical(
                 logical_coordinates,
                 windows.single().height(),
             );
-            // info!("logical coordinates: {:?}", game_coordinates);
+            let card_spawn_tile_coordinates: TileCoordinates = game_coordinates.clone().into();
+            info!("spawning card at: {:?}", card_spawn_tile_coordinates);
 
-            // let card_position = get_card_grid_position(card_position);
-            let tile_coordinates: TileCoordinates = game_coordinates.into();
-
-            let card_position = tile_coordinates.transform.translation;
-            info!("spawning card at: {:?}", card_position);
+            let actual_card_spawn: ActuallyLogicalCoordinates =
+                card_spawn_tile_coordinates.clone().into();
 
             let color = next_card_color(&mut color_index);
-            let card_entity = commands
+            commands
                 .spawn((
-                    CardBundle::new(0, color, tile_coordinates.clone()),
+                    CardBundle {
+                        value: Weight(card_value),
+                        color: ColorComponent(color),
+                        position: TilePosition::new(card_spawn_tile_coordinates.clone()),
+
+                        sprite: SpriteBundle {
+                            sprite: Sprite {
+                                color,
+                                custom_size: Some(CARD_DIMENSIONS),
+                                ..Default::default()
+                            },
+                            transform: actual_card_spawn.transform(),
+                            ..Default::default()
+                        },
+                    },
                     CardMarker,
                 ))
-                .id();
-
-            // Spawn the text entity as a child of the card entity
-            commands.entity(card_entity).with_children(|parent| {
-                let mut text_coordinates = tile_coordinates.transform();
-                text_coordinates.translation += Vec3::new(0.0, 0.0, 1.0);
-
-                parent.spawn(TextBundle {
-                    text: Text::from_section(
-                        0.to_string(),
-                        TextStyle {
-                            font: asset_store.font.clone(),
-                            font_size: 60.0,
-                            color: Color::WHITE,
+                // Spawn the text entity as a child of the card entity
+                .with_children(|parent| {
+                    parent.spawn((
+                        // commands.spawn((
+                        Text2dBundle {
+                            text: Text::from_section(
+                                card_value.to_string(),
+                                TextStyle {
+                                    font_size: TEXT_DIMENSIONS,
+                                    color: Color::BLACK,
+                                    font: asset_store.font.clone(),
+                                },
+                            ),
+                            // Overlay the text on the card by setting its Z value 0.1 higher
+                            transform: Transform::from_xyz(0.0, 0.0, 0.1),
+                            ..Default::default()
                         },
-                    ),
-                    // The transform to overlay the text on the sprite
-                    transform: text_coordinates,
-                    ..Default::default()
+                        TextMarker,
+                    ));
                 });
-            });
         }
     }
 }

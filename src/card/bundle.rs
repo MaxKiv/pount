@@ -1,19 +1,14 @@
-use std::default;
-
 use bevy::prelude::*;
 
-use crate::{
-    asset_loader::AssetStore,
-    coordinates::{ActuallyLogicalCoordinates, LogicalCoordinates, TileCoordinates},
-};
+use crate::coordinates::TileCoordinates;
 
-const CARD_DIMENSIONS: Vec2 = Vec2::new(100.0, 100.0);
+pub const CARD_DIMENSIONS: Vec2 = Vec2::new(100.0, 100.0);
 
 #[derive(Component, Debug)]
 pub struct CardMarker;
 
 #[derive(Component, Debug)]
-pub struct Weight(i32);
+pub struct Weight(pub i32);
 
 impl Weight {
     pub fn weight(&self) -> i32 {
@@ -22,7 +17,7 @@ impl Weight {
 }
 
 #[derive(Component)]
-pub struct ColorComponent(Color);
+pub struct ColorComponent(pub Color);
 
 impl ColorComponent {
     pub fn color(&self) -> Color {
@@ -43,9 +38,13 @@ impl std::fmt::Debug for ColorComponent {
 }
 
 #[derive(Component)]
-pub struct Position(TileCoordinates);
+pub struct TilePosition(TileCoordinates);
 
-impl Position {
+impl TilePosition {
+    pub fn new(tile_coordinates: TileCoordinates) -> Self {
+        Self(tile_coordinates)
+    }
+
     pub fn pos(&self) -> Vec3 {
         self.0.transform.translation
     }
@@ -55,8 +54,8 @@ impl Position {
 pub struct CardBundle {
     pub value: Weight,
     pub color: ColorComponent,
-    pub position: Position,
-    sprite: SpriteBundle,
+    pub position: TilePosition,
+    pub sprite: SpriteBundle,
 }
 
 impl std::fmt::Debug for CardBundle {
@@ -65,27 +64,5 @@ impl std::fmt::Debug for CardBundle {
             .field("value", &self.value)
             .field("color", &self.color)
             .finish()
-    }
-}
-
-impl CardBundle {
-    pub fn new(value: i32, color: Color, at_position: TileCoordinates) -> Self {
-        let spawning_coordinates: ActuallyLogicalCoordinates = at_position.clone().into();
-
-        Self {
-            value: Weight(value),
-            color: ColorComponent(color),
-            position: Position(at_position),
-
-            sprite: SpriteBundle {
-                sprite: Sprite {
-                    color,
-                    custom_size: Some(CARD_DIMENSIONS),
-                    ..Default::default()
-                },
-                transform: spawning_coordinates.transform(),
-                ..Default::default()
-            },
-        }
     }
 }

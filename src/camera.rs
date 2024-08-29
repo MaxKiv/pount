@@ -28,7 +28,7 @@ impl Plugin for CameraPlugin {
 
 fn spawn_camera(mut commands: Commands) {
     let projection = OrthographicProjection {
-        near: -1.0,
+        near: -1000.0,
         far: 1000.0,
         viewport_origin: Vec2::new(0.0, 0.0),
         scaling_mode: ScalingMode::WindowSize(1.0),
@@ -88,21 +88,11 @@ fn zoom_control_mouse_scroll(
     for ev in evr_scroll.read() {
         match ev.unit {
             MouseScrollUnit::Line => {
-                // println!(
-                //     "Scroll (line units): vertical: {}, horizontal: {}",
-                //     ev.y, ev.x
-                // );
-
                 for mut transform in query.iter_mut() {
                     transform.scale += ev.y * SCROLL_LINE_FACTOR;
                 }
             }
             MouseScrollUnit::Pixel => {
-                // println!(
-                //     "Scroll (pixel units): vertical: {}, horizontal: {}",
-                //     ev.y, ev.x
-                // );
-
                 for mut transform in query.iter_mut() {
                     transform.translation.z += ev.y * SCROLL_PIXEL_FACTOR;
                 }

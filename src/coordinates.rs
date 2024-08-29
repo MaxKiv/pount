@@ -51,7 +51,7 @@ impl ActuallyLogicalCoordinates {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct TileCoordinates {
     pub transform: Transform,
 }
@@ -65,7 +65,7 @@ impl TileCoordinates {
 impl From<ActuallyLogicalCoordinates> for TileCoordinates {
     fn from(value: ActuallyLogicalCoordinates) -> Self {
         // let discrete = get_card_grid_position(value);
-        let tile = value.transform().translation / Vec3::new(TILESIZE, TILESIZE, 1.0);
+        let tile = value.transform().translation / Vec3::new(TILESIZE, TILESIZE, 1.0).round();
         let tile = tile.round();
 
         Self {
@@ -88,5 +88,13 @@ impl From<TileCoordinates> for ActuallyLogicalCoordinates {
                 ..default()
             },
         }
+    }
+}
+
+impl std::fmt::Debug for TileCoordinates {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("TileCoordinates")
+            .field("translation", &self.transform.translation)
+            .finish()
     }
 }

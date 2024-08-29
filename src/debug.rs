@@ -2,7 +2,10 @@ use bevy::{prelude::*, window::WindowResized};
 use std::any::type_name;
 
 use crate::{
-    card::bundle::{CardMarker, ColorComponent, Position, Weight},
+    card::{
+        bundle::{CardMarker, ColorComponent, TilePosition, Weight},
+        spawn::TextMarker,
+    },
     schedule::InGameSet,
 };
 
@@ -28,6 +31,7 @@ impl Plugin for DebugPlugin {
                 // log_entity_position::<crate::camera::CameraMarker>,
                 log_card,
                 // log_entity_position::<CardMarker>,
+                log_entity_position::<TextMarker>,
                 log_window_dimensions_on_resize,
             )
                 .in_set(InGameSet::LogState),
@@ -37,7 +41,7 @@ impl Plugin for DebugPlugin {
 }
 
 fn log_card(
-    query: Query<(Entity, &Position, &Weight, &ColorComponent), With<CardMarker>>,
+    query: Query<(Entity, &TilePosition, &Weight, &ColorComponent), With<CardMarker>>,
     time: Res<Time>,
     mut timer: ResMut<LogTimer>,
 ) {
@@ -83,6 +87,23 @@ fn log_window_dimensions_on_resize(
                 window.physical_height(),
                 window.width(),
                 window.height()
+            );
+        }
+    }
+}
+
+fn log_entity_visibility<T: Component>(
+    query: Query<(Entity, &Transform, &Visibility), With<T>>,
+    time: Res<Time>,
+    mut timer: ResMut<LogTimer>,
+) {
+    if timer.0.tick(time.delta()).finished() {
+        for (_, transform, visibility) in query.iter() {
+            info!(
+                "Entity {:?} at {:?} visibility: {:?}",
+                type_name::<T>(),
+                transform.translation,
+                visibility
             );
         }
     }
