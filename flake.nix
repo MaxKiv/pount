@@ -44,7 +44,7 @@
       rec {
         # For `nix build` & `nix run`:
         defaultPackage = packages.pount;
-        packages = rec {
+        packages = {
           pount = naersk'.buildPackage {
             src = ./.;
             nativeBuildInputs = nativeBuildInputs;

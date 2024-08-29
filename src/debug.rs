@@ -3,7 +3,7 @@ use std::any::type_name;
 
 use crate::{
     card::{
-        bundle::{CardMarker, ColorComponent, TilePosition, Weight},
+        bundle::{Card, CardMarker, TilePosition},
         spawn::TextMarker,
     },
     schedule::InGameSet,
@@ -31,7 +31,7 @@ impl Plugin for DebugPlugin {
                 // log_entity_position::<crate::camera::CameraMarker>,
                 log_card,
                 // log_entity_position::<CardMarker>,
-                log_entity_position::<TextMarker>,
+                // log_entity_position::<TextMarker>,
                 log_window_dimensions_on_resize,
             )
                 .in_set(InGameSet::LogState),
@@ -41,18 +41,13 @@ impl Plugin for DebugPlugin {
 }
 
 fn log_card(
-    query: Query<(Entity, &TilePosition, &Weight, &ColorComponent), With<CardMarker>>,
+    query: Query<(Entity, &TilePosition, &Card), With<CardMarker>>,
     time: Res<Time>,
     mut timer: ResMut<LogTimer>,
 ) {
     if timer.0.tick(time.delta()).finished() {
-        for (_, position, weight, color) in query.iter() {
-            info!(
-                "{:?} {:?} Card at position: {:?}",
-                color,
-                weight.weight(),
-                position.pos()
-            );
+        for (_, position, card) in query.iter() {
+            info!("{:?} at position: {:?}", card, position.pos());
         }
     }
 }

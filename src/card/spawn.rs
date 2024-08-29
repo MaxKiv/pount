@@ -1,15 +1,15 @@
-use bevy::{prelude::*, reflect::Array};
+use bevy::prelude::*;
 
 pub const TEXT_DIMENSIONS: f32 = CARD_DIMENSIONS.x / 2.0;
 pub const TEXT_Z_OFFSET: f32 = 0.1;
 
 use crate::{
     asset_loader::AssetStore,
-    card::bundle::{CardBundle, CardMarker, ColorComponent, TilePosition, Weight, CARD_DIMENSIONS},
+    card::bundle::{Card, CardBundle, CardMarker, TilePosition, CARD_DIMENSIONS},
     coordinates::{ActuallyLogicalCoordinates, LogicalCoordinates, TileCoordinates},
 };
 
-use super::sequence::{Card, CardSequence};
+use super::sequence::CardSequence;
 
 pub const CARD_COLORS: [Color; 4] = [
     Color::SALMON,
@@ -59,8 +59,7 @@ pub fn spawn_card(
                 commands
                     .spawn((
                         CardBundle {
-                            value: Weight(value),
-                            color: ColorComponent(color),
+                            card,
                             position: TilePosition::new(card_spawn_tile_coordinates.clone()),
 
                             sprite: SpriteBundle {

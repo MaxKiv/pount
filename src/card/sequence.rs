@@ -1,39 +1,12 @@
 use crate::card::spawn::CARD_COLORS;
 
-use ansi_term::Colour::RGB;
 use bevy::prelude::*;
 use rand::prelude::SliceRandom;
 
+use super::bundle::Card;
+
 const CARD_VALUES: std::ops::RangeInclusive<i32> = 1..=9;
 const NUM_CARDS_PER_VALUE: usize = 2;
-
-#[derive(Clone)]
-pub struct Card {
-    pub value: i32,
-    pub color: Color,
-}
-
-impl std::fmt::Debug for Card {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self.color {
-            Color::Rgba {
-                red,
-                green,
-                blue,
-                alpha,
-            } => {
-                // massage the Bevy::Color into a ansi_term::Colour
-                let color = RGB(
-                    (red * alpha * 255.0) as u8,
-                    (green * alpha * 255.0) as u8,
-                    (blue * alpha * 255.0) as u8,
-                );
-                write!(f, "{} {}", color.paint("█"), self.value)
-            }
-            _ => write!(f, "card with undefined color {}", self.value),
-        }
-    }
-}
 
 #[derive(Debug, Resource)]
 pub struct CardSequence {

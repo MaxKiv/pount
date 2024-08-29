@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use crate::schedule::InGameSet;
+use crate::{schedule::InGameSet, win_condition::check_wincondition};
 
 use super::{
     sequence::generate_player_card_sequences,
@@ -15,7 +15,7 @@ impl Plugin for CardPlugin {
         app.add_systems(Startup, generate_player_card_sequences);
         app.add_systems(
             Update,
-            (spawn_card, despawn_cards)
+            (spawn_card, despawn_cards, check_wincondition)
                 .chain()
                 .in_set(InGameSet::MutateBoard),
         );
