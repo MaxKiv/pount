@@ -1,19 +1,18 @@
 use bevy::prelude::*;
 
-use crate::card::{
-    bundle::{Card, CardMarker, TilePosition},
-    spawn::CARD_COLORS,
+const MAX_TILE_POSITION: usize = 10;
+
+use crate::{
+    board::bundle::GameBoard,
+    card::{
+        bundle::{BoardPosition, CardBundle, CardMarker},
+        spawn::CARD_COLORS,
+    },
 };
 
-pub fn check_wincondition(
-    mut commands: Commands,
-    query: Query<(&Card, &TilePosition), With<CardMarker>>,
-) {
-    for current_color in CARD_COLORS.iter() {
-        for (card, position) in query.iter() {
-            if card.color == *current_color {
-                info!("{:?} at {:?}", card, position.pos());
-            }
-        }
-    }
+pub fn check_wincondition(mut commands: Commands, board_state: Res<GameBoard>) {
+    // Loop through cards in gamestate
+    // check if some(top_card) = cards.get(0)
+    // check top_card neighbours, if same color
+    // continue checking in that direction, if 4 consequitive WIN
 }

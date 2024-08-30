@@ -5,8 +5,9 @@ pub const TEXT_Z_OFFSET: f32 = 0.1;
 
 use crate::{
     asset_loader::AssetStore,
-    card::bundle::{Card, CardBundle, CardMarker, TilePosition, CARD_DIMENSIONS},
-    coordinates::{ActuallyLogicalCoordinates, LogicalCoordinates, TileCoordinates},
+    board::bundle::GameBoard,
+    card::bundle::{Card, CardBundle, CardMarker, CARD_DIMENSIONS},
+    coordinates::{ActuallyLogicalCoordinates, BoardCoordinates, LogicalCoordinates},
 };
 
 use super::sequence::CardSequence;
@@ -37,38 +38,46 @@ pub fn spawn_card(
     keyboard_input: Res<ButtonInput<KeyCode>>,
     windows: Query<&Window>,
     mut card_index: ResMut<CardIndex>,
+    mut board_state: ResMut<GameBoard>,
     asset_store: Res<AssetStore>,
     card_sequence: Res<CardSequence>,
 ) {
     if keyboard_input.just_pressed(KeyCode::Space) {
         if let Some(cursor_position) = windows.single().cursor_position() {
+            // massage coordinates
             let logical_coordinates = LogicalCoordinates::from_cursor_position(cursor_position);
             let game_coordinates = ActuallyLogicalCoordinates::from_logical(
                 logical_coordinates,
                 windows.single().height(),
             );
-            let card_spawn_tile_coordinates: TileCoordinates = game_coordinates.clone().into();
-            info!("spawning card at: {:?}", card_spawn_tile_coordinates);
+            let card_spawn_board_coordinates: BoardCoordinates = game_coordinates.clone().into();
+            info!("spawning card at: {:?}", card_spawn_board_coordinates);
 
             let actual_card_spawn: ActuallyLogicalCoordinates =
-                card_spawn_tile_coordinates.clone().into();
+                card_spawn_board_coordinates.clone().into();
 
             if let Some(card) = get_next_card(&mut card_index, &card_sequence) {
                 let color = card.color;
                 let value = card.value;
+
+                // Update board_state
+                let (x, y, _) = card_spawn_board_coordinates.as_xys();
+                board_state.0[y][x].cards.push(Card { value, color });
+                let z = board_state.0[y][x].cards.len();
+
+                // Render card
                 commands
                     .spawn((
                         CardBundle {
                             card,
-                            position: TilePosition::new(card_spawn_tile_coordinates.clone()),
-
                             sprite: SpriteBundle {
                                 sprite: Sprite {
                                     color,
                                     custom_size: Some(CARD_DIMENSIONS),
                                     ..Default::default()
                                 },
-                                transform: actual_card_spawn.transform(),
+                                transform: actual_card_spawn.transform()
+                                    * Transform::from_xyz(0.0, 0.0, z as f32),
                                 ..Default::default()
                             },
                         },
@@ -87,7 +96,7 @@ pub fn spawn_card(
                                         font: asset_store.font.clone(),
                                     },
                                 ),
-                                // Overlay the text on the card by setting its Z value 0.1 higher
+                                // Overlay the text on the card by setting its Z value
                                 transform: Transform::from_xyz(0.0, 0.0, TEXT_Z_OFFSET),
                                 ..Default::default()
                             },
@@ -103,11 +112,13 @@ pub fn despawn_cards(
     mut commands: Commands,
     keyboard_input: Res<ButtonInput<KeyCode>>,
     query: Query<Entity, With<CardMarker>>,
+    mut board_state: ResMut<GameBoard>,
 ) {
     if keyboard_input.just_pressed(KeyCode::Enter) {
         for entity in query.iter() {
             commands.entity(entity).despawn_recursive();
         }
+        board_state.clear();
     }
 }
 

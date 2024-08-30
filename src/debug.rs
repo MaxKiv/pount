@@ -1,20 +1,14 @@
 use bevy::{prelude::*, window::WindowResized};
 use std::any::type_name;
 
-use crate::{
-    card::{
-        bundle::{Card, CardMarker, TilePosition},
-        spawn::TextMarker,
-    },
-    schedule::InGameSet,
-};
+use crate::{board::debug::log_gamestate, schedule::InGameSet};
 
 const LOG_PERIOD: f32 = 1.0;
 
 pub struct DebugPlugin;
 
 #[derive(Resource)]
-struct LogTimer(Timer);
+pub struct LogTimer(pub Timer);
 
 fn setup_timer(mut commands: Commands) {
     commands.insert_resource(LogTimer(Timer::from_seconds(
@@ -29,10 +23,11 @@ impl Plugin for DebugPlugin {
             Update,
             (
                 // log_entity_position::<crate::camera::CameraMarker>,
-                log_card,
+                // log_card,
                 // log_entity_position::<CardMarker>,
                 // log_entity_position::<TextMarker>,
                 log_window_dimensions_on_resize,
+                log_gamestate,
             )
                 .in_set(InGameSet::LogState),
         );
@@ -40,17 +35,17 @@ impl Plugin for DebugPlugin {
     }
 }
 
-fn log_card(
-    query: Query<(Entity, &TilePosition, &Card), With<CardMarker>>,
-    time: Res<Time>,
-    mut timer: ResMut<LogTimer>,
-) {
-    if timer.0.tick(time.delta()).finished() {
-        for (_, position, card) in query.iter() {
-            info!("{:?} at position: {:?}", card, position.pos());
-        }
-    }
-}
+// fn log_card(
+//     query: Query<(Entity, &BoardPosition, &CardBundle), With<CardMarker>>,
+//     time: Res<Time>,
+//     mut timer: ResMut<LogTimer>,
+// ) {
+//     if timer.0.tick(time.delta()).finished() {
+//         for (_, position, card) in query.iter() {
+//             info!("{:?} at position: {:?}", card, position.pos());
+//         }
+//     }
+// }
 
 // subsystem to log position of an entity with component T
 fn log_entity_position<T: Component>(

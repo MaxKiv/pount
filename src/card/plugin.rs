@@ -15,7 +15,7 @@ impl Plugin for CardPlugin {
         app.add_systems(Startup, generate_player_card_sequences);
         app.add_systems(
             Update,
-            (spawn_card, despawn_cards, check_wincondition)
+            (spawn_card, despawn_cards)
                 .chain()
                 .in_set(InGameSet::MutateBoard),
         );

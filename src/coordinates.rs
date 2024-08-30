@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-const TILESIZE: f32 = 125.0;
+use crate::board::bundle::{BOARD_SIZE, TILE_SIZE};
 
 #[derive(Debug)]
 pub struct LogicalCoordinates {
@@ -52,22 +52,47 @@ impl ActuallyLogicalCoordinates {
 }
 
 #[derive(Clone)]
-pub struct TileCoordinates {
+pub struct BoardCoordinates {
     pub transform: Transform,
 }
 
-impl TileCoordinates {
+impl BoardCoordinates {
+    pub fn from_xyz(x: usize, y: usize, z: usize) -> Self {
+        let x = x.clamp(0, BOARD_SIZE);
+        let y = y.clamp(0, BOARD_SIZE);
+        Self {
+            transform: Transform::from_xyz(x as f32, y as f32, z as f32),
+        }
+    }
+
+    pub fn as_xys(&self) -> (usize, usize, usize) {
+        let translation = self.transform.translation;
+        (
+            translation.x as usize,
+            translation.y as usize,
+            translation.z as usize,
+        )
+    }
+
     pub fn transform(&self) -> Transform {
         self.transform
     }
 }
 
-impl From<ActuallyLogicalCoordinates> for TileCoordinates {
+impl From<ActuallyLogicalCoordinates> for BoardCoordinates {
     fn from(value: ActuallyLogicalCoordinates) -> Self {
-        // let discrete = get_card_grid_position(value);
-        let tile = value.transform().translation / Vec3::new(TILESIZE, TILESIZE, 1.0).round();
+        let tile = value.transform().translation / Vec3::new(TILE_SIZE, TILE_SIZE, 1.0).round();
         let tile = tile.round();
 
+        if tile.x as usize > BOARD_SIZE || tile.y as usize > BOARD_SIZE {
+            warn!(
+                "Attempting to spawn a card outside of the board boundary :(\nSomething is fishy
+                and you should check it out!",
+            );
+        }
+
+        let tile = tile.clamp(Vec3::ZERO, Vec3::splat(BOARD_SIZE as f32));
+
         Self {
             transform: Transform {
                 translation: tile,
@@ -77,10 +102,9 @@ impl From<ActuallyLogicalCoordinates> for TileCoordinates {
     }
 }
 
-impl From<TileCoordinates> for ActuallyLogicalCoordinates {
-    fn from(value: TileCoordinates) -> Self {
-        // let discrete = get_card_grid_position(value);
-        let tile = value.transform().translation * Vec3::new(TILESIZE, TILESIZE, 1.0);
+impl From<BoardCoordinates> for ActuallyLogicalCoordinates {
+    fn from(value: BoardCoordinates) -> Self {
+        let tile = value.transform().translation * Vec3::new(TILE_SIZE, TILE_SIZE, 1.0);
 
         Self {
             transform: Transform {
@@ -91,7 +115,7 @@ impl From<TileCoordinates> for ActuallyLogicalCoordinates {
     }
 }
 
-impl std::fmt::Debug for TileCoordinates {
+impl std::fmt::Debug for BoardCoordinates {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("TileCoordinates")
             .field("translation", &self.transform.translation)

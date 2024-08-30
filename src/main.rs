@@ -1,4 +1,5 @@
 mod asset_loader;
+pub mod board;
 mod camera;
 pub mod card;
 mod coordinates;
@@ -9,6 +10,7 @@ mod win_condition;
 mod window;
 
 use bevy::prelude::*;
+use board::plugin::BoardPlugin;
 
 use crate::card::plugin::CardPlugin;
 use asset_loader::AssetLoaderPlugin;
@@ -28,6 +30,7 @@ fn main() {
         .add_plugins(CameraPlugin)
         .add_plugins(AssetLoaderPlugin)
         .add_plugins(DebugPlugin)
+        .add_plugins(BoardPlugin)
         .add_plugins(CardPlugin)
         // .add_plugins(MovementPlugin)
         .add_plugins(SchedulePlugin)
