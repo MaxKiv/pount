@@ -8,7 +8,7 @@ pub const BOARD_SIZE: usize = 10;
 type Board = [[Tile; BOARD_SIZE]; BOARD_SIZE];
 
 // TODO remove the pub from Board, to make the GameBoard data structure opaque
-#[derive(Resource, Debug)]
+#[derive(Resource)]
 pub struct GameBoard(pub Board);
 
 impl GameBoard {
@@ -27,13 +27,30 @@ impl GameBoard {
         }
     }
 
-    // pub fn get_tile(&self, x: usize, y: usize) -> &Tile {
-    //     &self.0[y][x]
-    // }
+    pub fn get_tile(&self, x: usize, y: usize) -> &Tile {
+        &self.0[y][x]
+    }
+
+    pub fn get_tile_mut(&mut self, x: usize, y: usize) -> &mut Tile {
+        &mut self.0[y][x]
+    }
 
     // TODO remove this to make GameBoard data structure opaque
     pub fn board(&self) -> &Board {
         &self.0
+    }
+}
+
+impl std::fmt::Debug for GameBoard {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        for (y, tiles) in self.board().iter().enumerate() {
+            for (x, tile) in tiles.iter().enumerate() {
+                if let Some(top_card) = tile.cards.last() {
+                    write!(f, "({},{}) {:?} ", x, y, top_card).unwrap();
+                }
+            }
+        }
+        Ok(())
     }
 }
 

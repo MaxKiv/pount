@@ -6,7 +6,6 @@ mod coordinates;
 mod debug;
 mod movement;
 mod schedule;
-mod win_condition;
 mod window;
 
 use bevy::prelude::*;

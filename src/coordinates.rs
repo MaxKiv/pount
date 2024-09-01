@@ -58,8 +58,8 @@ pub struct BoardCoordinates {
 
 impl BoardCoordinates {
     pub fn from_xyz(x: usize, y: usize, z: usize) -> Self {
-        let x = x.clamp(0, BOARD_SIZE);
-        let y = y.clamp(0, BOARD_SIZE);
+        let x = x.clamp(0, BOARD_SIZE - 1);
+        let y = y.clamp(0, BOARD_SIZE - 1);
         Self {
             transform: Transform::from_xyz(x as f32, y as f32, z as f32),
         }
@@ -82,23 +82,7 @@ impl BoardCoordinates {
 impl From<ActuallyLogicalCoordinates> for BoardCoordinates {
     fn from(value: ActuallyLogicalCoordinates) -> Self {
         let tile = value.transform().translation / Vec3::new(TILE_SIZE, TILE_SIZE, 1.0).round();
-        let tile = tile.round();
-
-        if tile.x as usize > BOARD_SIZE || tile.y as usize > BOARD_SIZE {
-            warn!(
-                "Attempting to spawn a card outside of the board boundary :(\nSomething is fishy
-                and you should check it out!",
-            );
-        }
-
-        let tile = tile.clamp(Vec3::ZERO, Vec3::splat(BOARD_SIZE as f32));
-
-        Self {
-            transform: Transform {
-                translation: tile,
-                ..default()
-            },
-        }
+        Self::from_xyz(tile.x as usize, tile.y as usize, tile.z as usize)
     }
 }
 

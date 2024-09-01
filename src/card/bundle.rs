@@ -48,7 +48,7 @@ impl std::fmt::Debug for Card {
                     (green * alpha * 255.0) as u8,
                     (blue * alpha * 255.0) as u8,
                 );
-                write!(f, "{} {}", color.paint("█"), self.value)
+                write!(f, "{}", color.paint(format!("{}", self.value)))
             }
             _ => write!(f, "card with undefined color {}", self.value),
         }

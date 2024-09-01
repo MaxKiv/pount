@@ -1,6 +1,6 @@
 use bevy::{input::mouse::MouseWheel, prelude::*, render::camera::ScalingMode};
 
-use crate::schedule::InGameSet;
+use crate::{board::bundle::TILE_SIZE, schedule::InGameSet};
 
 const SCROLL_LINE_FACTOR: f32 = 0.2;
 const SCROLL_PIXEL_FACTOR: f32 = 0.2;
@@ -39,6 +39,7 @@ fn spawn_camera(mut commands: Commands) {
     commands.spawn((
         Camera2dBundle {
             projection,
+            transform: Transform::from_xyz(-TILE_SIZE / 2.0, -TILE_SIZE / 2.0, 0.0),
             ..default()
         },
         CameraMarker,

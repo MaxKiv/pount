@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use crate::{schedule::InGameSet, win_condition::check_wincondition};
+use crate::schedule::InGameSet;
 
 use super::{
     sequence::generate_player_card_sequences,

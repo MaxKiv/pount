@@ -5,7 +5,7 @@ pub const TEXT_Z_OFFSET: f32 = 0.1;
 
 use crate::{
     asset_loader::AssetStore,
-    board::bundle::GameBoard,
+    board::{bundle::GameBoard, win_condition::StateChanged},
     card::bundle::{Card, CardBundle, CardMarker, CARD_DIMENSIONS},
     coordinates::{ActuallyLogicalCoordinates, BoardCoordinates, LogicalCoordinates},
 };
@@ -33,6 +33,7 @@ impl CardIndex {
 #[derive(Component, Debug)]
 pub struct TextMarker;
 
+#[allow(clippy::too_many_arguments)]
 pub fn spawn_card(
     mut commands: Commands,
     keyboard_input: Res<ButtonInput<KeyCode>>,
@@ -41,6 +42,7 @@ pub fn spawn_card(
     mut board_state: ResMut<GameBoard>,
     asset_store: Res<AssetStore>,
     card_sequence: Res<CardSequence>,
+    mut board_state_changed: ResMut<StateChanged>,
 ) {
     if keyboard_input.just_pressed(KeyCode::Space) {
         if let Some(cursor_position) = windows.single().cursor_position() {
@@ -62,8 +64,14 @@ pub fn spawn_card(
 
                 // Update board_state
                 let (x, y, _) = card_spawn_board_coordinates.as_xys();
-                board_state.0[y][x].cards.push(Card { value, color });
-                let z = board_state.0[y][x].cards.len();
+                board_state
+                    .get_tile_mut(x, y)
+                    .cards
+                    .push(Card { value, color });
+                let z = board_state.get_tile(x, y).cards.len();
+
+                info!("Card placed, board state changed");
+                board_state_changed.0 = true;
 
                 // Render card
                 commands
