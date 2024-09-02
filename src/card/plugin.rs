@@ -1,10 +1,10 @@
 use bevy::prelude::*;
 
-use crate::schedule::InGameSet;
+use crate::{board::restart::restart_game, schedule::InGameSet};
 
 use super::{
     sequence::generate_player_card_sequences,
-    spawn::{despawn_cards, spawn_card, CardIndex},
+    spawn::{spawn_card, CardIndex},
 };
 
 pub struct CardPlugin;
@@ -15,7 +15,7 @@ impl Plugin for CardPlugin {
         app.add_systems(Startup, generate_player_card_sequences);
         app.add_systems(
             Update,
-            (spawn_card, despawn_cards)
+            (spawn_card, restart_game)
                 .chain()
                 .in_set(InGameSet::MutateBoard),
         );

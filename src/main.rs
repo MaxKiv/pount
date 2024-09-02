@@ -4,7 +4,6 @@ mod camera;
 pub mod card;
 mod coordinates;
 mod debug;
-mod movement;
 mod schedule;
 mod window;
 
@@ -31,7 +30,6 @@ fn main() {
         .add_plugins(DebugPlugin)
         .add_plugins(BoardPlugin)
         .add_plugins(CardPlugin)
-        // .add_plugins(MovementPlugin)
         .add_plugins(SchedulePlugin)
         .run();
 }

@@ -12,7 +12,7 @@ type Board = [[Tile; BOARD_SIZE]; BOARD_SIZE];
 pub struct GameBoard(pub Board);
 
 impl GameBoard {
-    pub fn initialize() -> Self {
+    pub fn reset() -> Self {
         let empty_board: GameBoard = GameBoard(core::array::from_fn(|_| {
             core::array::from_fn(|_| Tile { cards: Vec::new() })
         }));
@@ -61,8 +61,6 @@ pub struct Tile {
 
 // System to initialize the game board
 pub fn setup_board(mut commands: Commands) {
-    let empty_board = GameBoard::initialize();
-
-    info!("spawned GameBoard resource: {:?}", empty_board);
+    let empty_board = GameBoard::reset();
     commands.insert_resource(empty_board);
 }

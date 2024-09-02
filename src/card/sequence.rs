@@ -36,7 +36,7 @@ impl CardSequence {
         Self { cards }
     }
 
-    fn generate() -> Self {
+    pub fn generate() -> Self {
         let mut all_sequences: Vec<CardSequence> = Vec::new();
 
         // Iterate over each color, generating a CardSequence and interleaving
