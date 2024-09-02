@@ -24,7 +24,7 @@ pub const CARD_COLORS: [Color; 4] = [
 
 #[derive(Resource)]
 pub struct CardIndex {
-    index: usize,
+    pub index: usize,
 }
 
 impl CardIndex {
@@ -75,52 +75,62 @@ pub fn spawn_card(
                         .cards
                         .push(Card { value, color });
                     let z = board_state.get_tile(x, y).cards.len();
+                    actual_card_spawn.transform().translation.z = z as f32;
 
                     info!("Card placed, board state changed");
                     board_state_changed.0 = true;
 
                     // Render card
-                    commands
-                        .spawn((
-                            CardBundle {
-                                card,
-                                sprite: SpriteBundle {
-                                    sprite: Sprite {
-                                        color,
-                                        custom_size: Some(CARD_DIMENSIONS),
-                                        ..Default::default()
-                                    },
-                                    transform: actual_card_spawn.transform()
-                                        * Transform::from_xyz(0.0, 0.0, z as f32),
-                                    ..Default::default()
-                                },
-                            },
-                            CardMarker,
-                        ))
-                        // Spawn the text entity as a child of the card entity
-                        .with_children(|parent| {
-                            parent.spawn((
-                                // commands.spawn((
-                                Text2dBundle {
-                                    text: Text::from_section(
-                                        value.to_string(),
-                                        TextStyle {
-                                            font_size: TEXT_DIMENSIONS,
-                                            color: Color::BLACK,
-                                            font: asset_store.font.clone(),
-                                        },
-                                    ),
-                                    // Overlay the text on the card by setting its Z value
-                                    transform: Transform::from_xyz(0.0, 0.0, TEXT_Z_OFFSET),
-                                    ..Default::default()
-                                },
-                                TextMarker,
-                            ));
-                        });
+                    let _ = render_card(actual_card_spawn, card, &asset_store, &mut commands);
                 }
             }
         }
     }
+}
+
+pub fn render_card(
+    actual_card_spawn: ActuallyLogicalCoordinates,
+    card: Card,
+    asset_store: &AssetStore,
+    commands: &mut Commands,
+) -> Entity {
+    let entity = commands
+        .spawn((
+            CardBundle {
+                card,
+                sprite: SpriteBundle {
+                    sprite: Sprite {
+                        color: card.color,
+                        custom_size: Some(CARD_DIMENSIONS),
+                        ..Default::default()
+                    },
+                    transform: actual_card_spawn.transform(),
+                    ..Default::default()
+                },
+            },
+            CardMarker,
+        ))
+        // Spawn the text entity as a child of the card entity
+        .with_children(|parent| {
+            parent.spawn((
+                Text2dBundle {
+                    text: Text::from_section(
+                        card.value.to_string(),
+                        TextStyle {
+                            font_size: TEXT_DIMENSIONS,
+                            color: Color::BLACK,
+                            font: asset_store.font.clone(),
+                        },
+                    ),
+                    // Overlay the text on the card by setting its Z value
+                    transform: Transform::from_xyz(0.0, 0.0, TEXT_Z_OFFSET),
+                    ..Default::default()
+                },
+                TextMarker,
+            ));
+        })
+        .id();
+    entity
 }
 
 // are the given new card spawning coordinates next to a
