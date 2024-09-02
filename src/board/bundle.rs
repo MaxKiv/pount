@@ -9,35 +9,42 @@ type Board = [[Tile; BOARD_SIZE]; BOARD_SIZE];
 
 // TODO remove the pub from Board, to make the GameBoard data structure opaque
 #[derive(Resource)]
-pub struct GameBoard(pub Board);
+pub struct GameBoard {
+    pub board: Board,
+    pub empty: bool,
+}
 
 impl GameBoard {
     pub fn reset() -> Self {
-        let empty_board: GameBoard = GameBoard(core::array::from_fn(|_| {
-            core::array::from_fn(|_| Tile { cards: Vec::new() })
-        }));
+        let empty_board: GameBoard = GameBoard {
+            board: core::array::from_fn(|_| core::array::from_fn(|_| Tile { cards: Vec::new() })),
+            empty: true,
+        };
         empty_board
     }
 
     pub fn clear(&mut self) {
-        for tiles in self.0.iter_mut() {
+        for tiles in self.board.iter_mut() {
             for tile in tiles.iter_mut() {
                 tile.cards.clear();
             }
         }
+        self.empty = true;
     }
 
     pub fn get_tile(&self, x: usize, y: usize) -> &Tile {
-        &self.0[y][x]
+        &self.board[y][x]
     }
 
     pub fn get_tile_mut(&mut self, x: usize, y: usize) -> &mut Tile {
-        &mut self.0[y][x]
+        // HACK: this assumption will not always hold
+        self.empty = false;
+        &mut self.board[y][x]
     }
 
     // TODO remove this to make GameBoard data structure opaque
     pub fn board(&self) -> &Board {
-        &self.0
+        &self.board
     }
 }
 

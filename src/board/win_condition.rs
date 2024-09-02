@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 
 const CARDS_TO_WIN: i32 = 4;
-const NEIGHBOURS: [(i32, i32); 8] = [
+pub const NEIGHBOURS: [(i32, i32); 8] = [
     (-1, -1),
     (-1, 0),
     (-1, 1),
