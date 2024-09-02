@@ -4,6 +4,8 @@ use crate::{board::bundle::TILE_SIZE, schedule::InGameSet};
 
 const SCROLL_LINE_FACTOR: f32 = 0.2;
 const SCROLL_PIXEL_FACTOR: f32 = 0.2;
+pub const CAMERA_OFFSET_X: f32 = -TILE_SIZE / 2.0;
+pub const CAMERA_OFFSET_Y: f32 = -TILE_SIZE / 2.0;
 
 #[derive(Component)]
 pub struct CameraMarker;
@@ -39,7 +41,7 @@ fn spawn_camera(mut commands: Commands) {
     commands.spawn((
         Camera2dBundle {
             projection,
-            transform: Transform::from_xyz(-TILE_SIZE / 2.0, -TILE_SIZE / 2.0, 0.0),
+            transform: Transform::from_xyz(CAMERA_OFFSET_X, CAMERA_OFFSET_Y, 0.0),
             ..default()
         },
         CameraMarker,

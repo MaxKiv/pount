@@ -2,6 +2,7 @@ use bevy::prelude::*;
 
 use crate::board::bundle::{BOARD_SIZE, TILE_SIZE};
 
+// Coordinate space in logical screen pixels, accounts for screen scaling
 #[derive(Debug)]
 pub struct LogicalCoordinates {
     transform: Transform,
@@ -21,6 +22,7 @@ impl LogicalCoordinates {
     }
 }
 
+// Coordinate space in logical screen pixels, with mirrored y axis
 #[derive(Clone)]
 pub struct ActuallyLogicalCoordinates {
     transform: Transform,
@@ -51,6 +53,7 @@ impl ActuallyLogicalCoordinates {
     }
 }
 
+// Coordinate space in discrete tile sizes
 #[derive(Clone)]
 pub struct BoardCoordinates {
     pub transform: Transform,
