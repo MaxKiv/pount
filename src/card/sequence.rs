@@ -60,7 +60,7 @@ impl CardSequence {
         for i in 0..max_len {
             for seq in vec.iter() {
                 if let Some(card) = seq.cards.get(i) {
-                    out.cards.push(card.clone());
+                    out.cards.push(*card);
                 }
             }
         }
