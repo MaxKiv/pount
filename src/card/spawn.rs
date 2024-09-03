@@ -22,6 +22,7 @@ pub const CARD_COLORS: [Color; 4] = [
     Color::SEA_GREEN,
 ];
 
+// Tracks current card index for the card_sequence
 #[derive(Resource)]
 pub struct CardIndex {
     pub index: usize,
@@ -57,23 +58,21 @@ pub fn spawn_card(
             );
             let card_spawn_board_coordinates: BoardCoordinates = game_coordinates.clone().into();
 
-            // check if player clicked a valid location to spawn a new card
-            if valid_spawn_location(&card_spawn_board_coordinates, board_state.as_ref()) {
-                info!("spawning card at: {:?}", card_spawn_board_coordinates);
+            if let Some(next_card) = get_next_card(&card_index, &card_sequence) {
+                // check if player clicked a valid location to spawn a new card
+                if valid_spawn_location(
+                    &card_spawn_board_coordinates,
+                    &next_card,
+                    board_state.as_ref(),
+                ) {
+                    info!("spawning card at: {:?}", card_spawn_board_coordinates);
 
-                let mut actual_card_spawn: ActuallyLogicalCoordinates =
-                    card_spawn_board_coordinates.clone().into();
-
-                if let Some(card) = get_next_card(&mut card_index, &card_sequence) {
-                    let color = card.color;
-                    let value = card.value;
+                    let mut actual_card_spawn: ActuallyLogicalCoordinates =
+                        card_spawn_board_coordinates.clone().into();
 
                     // Update board_state
                     let (x, y, _) = card_spawn_board_coordinates.as_xys();
-                    board_state
-                        .get_tile_mut(x, y)
-                        .cards
-                        .push(Card { value, color });
+                    board_state.get_tile_mut(x, y).cards.push(next_card);
 
                     let z = board_state.get_tile(x, y).cards.len();
 
@@ -81,11 +80,13 @@ pub fn spawn_card(
                     spawn_transform.translation.z = z as f32;
                     actual_card_spawn.set_transform(spawn_transform);
 
+                    // Notify board state has changed
                     info!("Card placed, board state changed");
                     board_state_changed.0 = true;
+                    card_index.index += 1;
 
                     // Render card
-                    let _ = render_card(actual_card_spawn, card, &asset_store, &mut commands);
+                    let _ = render_card(actual_card_spawn, next_card, &asset_store, &mut commands);
                 }
             }
         }
@@ -140,6 +141,7 @@ pub fn render_card(
 // are the given new card spawning coordinates next to a
 fn valid_spawn_location(
     card_spawn_board_coordinates: &BoardCoordinates,
+    next_card: &Card,
     board_state: &GameBoard,
 ) -> bool {
     // First card is always valid
@@ -148,8 +150,20 @@ fn valid_spawn_location(
         return true;
     }
 
-    // Is there a card in on the neighbouring spots for this spawn location
     let (x, y, _) = card_spawn_board_coordinates.as_xys();
+    // Is there already a Card on this location, with lower value?
+    if let Some(top_card) = board_state.get_tile(x, y).cards.last() {
+        if next_card.value > top_card.value {
+            info!("valid spawn location: {:?} > {:?}", next_card, top_card);
+            return true;
+        } else {
+            return false;
+        }
+    } else {
+        info!("no top card on current spawn position");
+    }
+
+    // Is there a card in on the neighbouring spots for this spawn location
     for (dx, dy) in NEIGHBOURS.iter() {
         if let Some(nx) = (x as i32).checked_add(*dx) {
             if let Some(ny) = (y as i32).checked_add(*dy) {
@@ -190,8 +204,6 @@ pub fn despawn_cards(
     }
 }
 
-fn get_next_card(card_index: &mut CardIndex, card_sequence: &Res<CardSequence>) -> Option<Card> {
-    let card = card_sequence.cards.get(card_index.index).cloned();
-    card_index.index += 1;
-    card
+fn get_next_card(card_index: &CardIndex, card_sequence: &Res<CardSequence>) -> Option<Card> {
+    card_sequence.cards.get(card_index.index).cloned()
 }
