@@ -20,7 +20,10 @@ use crate::{
     asset_loader::AssetStore,
     board::bundle::GameBoard,
     camera::{CAMERA_OFFSET_X, CAMERA_OFFSET_Y},
-    card::bundle::Card,
+    card::{
+        bundle::Card,
+        spawn::{CardIndex, CARD_TEXT_Z_OFFSET},
+    },
 };
 
 use super::bundle::BOARD_SIZE;
@@ -28,12 +31,16 @@ use super::bundle::BOARD_SIZE;
 #[derive(Resource, Debug)]
 pub struct StateChanged(pub bool);
 
+#[derive(Resource)]
+pub struct PlayerWinEntity(pub Option<Entity>);
+
 pub fn check_wincondition(
     mut commands: Commands,
     board_state: Res<GameBoard>,
     mut board_state_changed: ResMut<StateChanged>,
     asset_store: Res<AssetStore>,
     windows: Query<&Window>,
+    mut player_win_entity: ResMut<PlayerWinEntity>,
 ) {
     if board_state_changed.0 {
         info!("Board state changed, checking wincondition");
@@ -42,16 +49,24 @@ pub fn check_wincondition(
         for (y, tiles) in board_state.board().iter().enumerate() {
             for (x, tile) in tiles.iter().enumerate() {
                 if let Some(top_card) = tile.cards.last() {
-                    info!("checking neighbours of: {:?}", top_card);
+                    // info!("checking neighbours of: {:?}", top_card);
                     if let Some(winning_card_streak) =
                         check_card_neighbours(*top_card, x, y, &board_state)
                     {
-                        on_player_win(
+                        let entity = on_player_win(
                             winning_card_streak,
                             &mut commands,
                             &asset_store,
                             windows.single(),
                         );
+
+                        info!("Inserting player win entity: {:?}", entity);
+                        player_win_entity.0 = Some(entity);
+
+                        // early return or else a player will always win at least 2 times, once for
+                        // each end of the color streak.
+                        // this will cause multiple calls to on_player_win, which is not expected
+                        return;
                     }
                 }
             }
@@ -64,36 +79,39 @@ fn on_player_win(
     commands: &mut Commands,
     asset_store: &Res<AssetStore>,
     window: &Window,
-) {
+) -> Entity {
     let transform = Transform::from_xyz(
         window.width() / 2.0 + CAMERA_OFFSET_X,
         window.height() / 2.0 + CAMERA_OFFSET_Y,
         WIN_TEXT_BOX_Z,
     );
-    commands
-        .spawn(Text2dBundle {
-            text: Text::from_section(
-                "game over!".to_string(),
-                TextStyle {
-                    font_size: WIN_TEXT_FONT_SIZE,
-                    color: winning_card_streak.first().unwrap().color,
-                    font: asset_store.font.clone(),
-                },
-            ),
-            // Overlay the text on the card by setting its Z value
+
+    let entity = commands
+        .spawn(SpriteBundle {
+            sprite: Sprite {
+                color: Color::WHITE,
+                custom_size: Some(Vec2::new(WIN_TEXT_BOX_X, WIN_TEXT_BOX_Y)),
+                ..Default::default()
+            },
             transform,
             ..Default::default()
         })
         .with_children(|parent| {
-            parent.spawn(SpriteBundle {
-                sprite: Sprite {
-                    color: Color::WHITE,
-                    custom_size: Some(Vec2::new(WIN_TEXT_BOX_X, WIN_TEXT_BOX_Y)),
-                    ..Default::default()
-                },
+            parent.spawn(Text2dBundle {
+                text: Text::from_section(
+                    "game over!".to_string(),
+                    TextStyle {
+                        font_size: WIN_TEXT_FONT_SIZE,
+                        color: winning_card_streak.first().unwrap().color,
+                        font: asset_store.font.clone(),
+                    },
+                ),
+                transform: Transform::from_xyz(0.0, 0.0, CARD_TEXT_Z_OFFSET),
                 ..Default::default()
             });
-        });
+        })
+        .id();
+    entity
 }
 
 // Checks each neighbouring card if there are CARDS_TO_WIN cards of the same color
@@ -123,7 +141,7 @@ fn check_card_neighbours(
                                 break 'check_color_streak;
                             } else {
                                 current_color_streak.push(*neighbouring_card);
-                                info!("color streak {:?}", current_color_streak);
+                                // info!("color streak {:?}", current_color_streak);
                             }
                             if card_number == CARDS_TO_WIN - 1 {
                                 return Some(current_color_streak);

@@ -10,8 +10,8 @@ use crate::{
 
 use super::{sequence::CardSequence, spawn::CardIndex};
 
-const NEXT_CARD_X_WINDOW_WIDTH_PERCENTAGE: f32 = 0.8;
-const NEXT_CARD_Y_WINDOW_WIDTH_PERCENTAGE: f32 = 0.8;
+const NEXT_CARD_X_WINDOW_WIDTH_PERCENTAGE: f32 = 0.9;
+const NEXT_CARD_Y_WINDOW_WIDTH_PERCENTAGE: f32 = 0.9;
 const NEXT_CARD_Z: f32 = 100.0;
 
 #[derive(Resource)]
@@ -24,7 +24,7 @@ pub fn show_next_card(
     asset_store: Res<AssetStore>,
     mut commands: Commands,
     windows: Query<&Window>,
-    mut current_card_entity: ResMut<CurrentCardEntity>, // Inject the resource
+    mut current_card_entity: ResMut<CurrentCardEntity>,
 ) {
     if board_state_changed.0 {
         info!("Board state changed, showing next card");

@@ -17,17 +17,18 @@ impl Plugin for SchedulePlugin {
             Update,
             (
                 InGameSet::MutateCamera,
-                InGameSet::MutateBoard,
-                // Want to flush in between these systemsets? look at the comment below
                 InGameSet::CheckWincondition,
+                // Want to flush in between these systemsets? look at the comment below
+                InGameSet::MutateBoard,
                 InGameSet::LogState,
             )
                 .chain(),
         );
-        // app.add_systems(update,
+        // app.add_systems(
+        //     Update,
         //     apply_deferred
-        //         .before(InGameSet::MutateBoard)
         //         .after(InGameSet::CheckWincondition)
-        //     );
+        //         .before(InGameSet::MutateBoard),
+        // );
     }
 }

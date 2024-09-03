@@ -45,6 +45,10 @@ impl ActuallyLogicalCoordinates {
         self.transform
     }
 
+    pub fn set_transform(&mut self, transform: Transform) {
+        self.transform = transform;
+    }
+
     pub fn from_logical(mut value: LogicalCoordinates, window_height: f32) -> Self {
         let translation = value.transform.translation;
         value.transform.translation =

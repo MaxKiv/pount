@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 
 pub const TEXT_DIMENSIONS: f32 = CARD_DIMENSIONS.x / 2.0;
-pub const TEXT_Z_OFFSET: f32 = 0.1;
+pub const CARD_TEXT_Z_OFFSET: f32 = 0.1;
 
 use crate::{
     asset_loader::AssetStore,
@@ -61,7 +61,7 @@ pub fn spawn_card(
             if valid_spawn_location(&card_spawn_board_coordinates, board_state.as_ref()) {
                 info!("spawning card at: {:?}", card_spawn_board_coordinates);
 
-                let actual_card_spawn: ActuallyLogicalCoordinates =
+                let mut actual_card_spawn: ActuallyLogicalCoordinates =
                     card_spawn_board_coordinates.clone().into();
 
                 if let Some(card) = get_next_card(&mut card_index, &card_sequence) {
@@ -74,8 +74,12 @@ pub fn spawn_card(
                         .get_tile_mut(x, y)
                         .cards
                         .push(Card { value, color });
+
                     let z = board_state.get_tile(x, y).cards.len();
-                    actual_card_spawn.transform().translation.z = z as f32;
+
+                    let mut spawn_transform = actual_card_spawn.transform();
+                    spawn_transform.translation.z = z as f32;
+                    actual_card_spawn.set_transform(spawn_transform);
 
                     info!("Card placed, board state changed");
                     board_state_changed.0 = true;
@@ -123,7 +127,7 @@ pub fn render_card(
                         },
                     ),
                     // Overlay the text on the card by setting its Z value
-                    transform: Transform::from_xyz(0.0, 0.0, TEXT_Z_OFFSET),
+                    transform: Transform::from_xyz(0.0, 0.0, CARD_TEXT_Z_OFFSET),
                     ..Default::default()
                 },
                 TextMarker,
