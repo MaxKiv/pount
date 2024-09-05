@@ -18,7 +18,8 @@ impl CardSequence {
         Self { cards: Vec::new() }
     }
 
-    fn generate_color(color: Color) -> Self {
+    // Generate a sequence of cards of given color with randomized values
+    fn generate_color(color: Color) -> Vec<Card> {
         let mut rng = rand::thread_rng();
 
         // Collect the numbers into a vector by repeating CARD_VALUES NUM_CARDS_PER_VALUE times
@@ -33,25 +34,36 @@ impl CardSequence {
             .collect();
         cards.shuffle(&mut rng);
 
-        Self { cards }
+        cards
     }
 
-    pub fn generate() -> Self {
-        let mut all_sequences: Vec<CardSequence> = Vec::new();
+    /// Generate a CardSequence for a single player
+    pub fn generate_player_sequence(color_1: Color, color_2: Color) -> Self {
+        let mut rng = rand::thread_rng();
+        let mut sequence = CardSequence::new();
 
-        // Iterate over each color, generating a CardSequence and interleaving
-        for color in CARD_COLORS.iter().cloned() {
-            let single_color_cardsequence = Self::generate_color(color);
-            all_sequences.push(single_color_cardsequence)
+        for card in Self::generate_color(color_1) {
+            sequence.cards.push(card);
+        }
+        for card in Self::generate_color(color_2) {
+            sequence.cards.push(card);
         }
 
-        let out = Self::flatten_interleaved(all_sequences);
-        info!("Generated CardSequence: {:?}", out);
-
-        out
+        sequence.cards.shuffle(&mut rng);
+        sequence
     }
 
-    // Turn a Vec<CardSequence> into a CardSequence by interleaving each CardSequence in the Vec
+    /// Generate a CardSequence
+    pub fn generate_full_sequence() -> Self {
+        let sequences = vec![
+            CardSequence::generate_player_sequence(CARD_COLORS[0], CARD_COLORS[1]),
+            CardSequence::generate_player_sequence(CARD_COLORS[2], CARD_COLORS[3]),
+        ];
+
+        CardSequence::flatten_interleaved(sequences)
+    }
+
+    //  a Vec<CardSequence> into a CardSequence by interleaving each CardSequence in the Vec
     fn flatten_interleaved(vec: Vec<CardSequence>) -> CardSequence {
         let mut out = CardSequence::new();
 
@@ -69,7 +81,9 @@ impl CardSequence {
     }
 }
 
-pub fn generate_player_card_sequences(mut commands: Commands) {
-    let card_sequence = CardSequence::generate();
-    commands.insert_resource(card_sequence);
+pub fn generate_card_sequences(mut commands: Commands) {
+    let sequence = CardSequence::generate_full_sequence();
+    // TODO extend this for different number of players
+    info!("generated card sequence {:?}", sequence);
+    commands.insert_resource(sequence);
 }

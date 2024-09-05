@@ -17,8 +17,8 @@ use super::sequence::CardSequence;
 
 pub const CARD_COLORS: [Color; 4] = [
     Color::SALMON,
-    Color::AQUAMARINE,
     Color::GOLD,
+    Color::AQUAMARINE,
     Color::SEA_GREEN,
 ];
 

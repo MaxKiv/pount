@@ -36,7 +36,7 @@ pub fn restart_game(
         *board_state = GameBoard::reset();
 
         // generate a new cardsequence
-        *card_sequence = CardSequence::generate();
+        *card_sequence = CardSequence::generate_full_sequence();
         card_index.index = 0;
     }
 }
