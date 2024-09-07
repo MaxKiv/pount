@@ -1,6 +1,6 @@
-use bevy::prelude::*;
+use bevy::{prelude::*, render::render_resource::PipelineLayout};
 
-pub const TEXT_DIMENSIONS: f32 = CARD_DIMENSIONS.x / 2.0;
+pub const CARD_TEXT_DIMENSIONS: f32 = CARD_DIMENSIONS.x / 2.0;
 pub const CARD_TEXT_Z_OFFSET: f32 = 0.1;
 const STACK_OFFSET: f32 = 5.0;
 
@@ -12,12 +12,13 @@ use crate::{
     },
     card::{
         bundle::{Card, CardBundle, CardMarker, CARD_DIMENSIONS},
-        undo::LastPlacedCard,
+        undo::PlacedCard,
     },
     coordinates::{ActuallyLogicalCoordinates, BoardCoordinates, LogicalCoordinates},
+    keys::KeyMap,
 };
 
-use super::{sequence::CardSequence, undo::LastPlacedCardRes};
+use super::{sequence::CardSequence, undo::CardHistory};
 
 pub const CARD_COLORS: [Color; 4] = [
     Color::SALMON,
@@ -50,9 +51,16 @@ pub fn spawn_card(
     mut board_state: ResMut<GameState>,
     asset_store: Res<AssetStore>,
     card_sequence: Res<CardSequence>,
-    mut last_placed_card: ResMut<LastPlacedCardRes>,
+    mut card_history: ResMut<CardHistory>,
+    keymap: Res<KeyMap>,
 ) {
-    if keyboard_input.just_pressed(KeyCode::Space) {
+    if keyboard_input.just_pressed(
+        keymap
+            .0
+            .get("spawn")
+            .cloned()
+            .expect("Spawn keymap not found"),
+    ) {
         if let Some(cursor_position) = windows.single().cursor_position() {
             // massage coordinates a bit
             let logical_coordinates = LogicalCoordinates::from_cursor_position(cursor_position);
@@ -94,12 +102,17 @@ pub fn spawn_card(
                     let entity =
                         render_card(actual_card_spawn, next_card, &asset_store, &mut commands);
 
-                    // Update last_placed_card
+                    // Update card history
                     let board_coordinates = card_spawn_board_coordinates;
-                    *last_placed_card = LastPlacedCardRes(Some(LastPlacedCard {
+                    let last_card = PlacedCard {
                         entity,
                         board_coordinates,
-                    }));
+                    };
+                    if card_history.0.is_some() {
+                        card_history.0.as_mut().unwrap().push(last_card);
+                    } else {
+                        card_history.0 = Some(vec![last_card]);
+                    }
 
                     info!("Card placed, board state changed");
                 }
@@ -137,7 +150,7 @@ pub fn render_card(
                     text: Text::from_section(
                         card.value.to_string(),
                         TextStyle {
-                            font_size: TEXT_DIMENSIONS,
+                            font_size: CARD_TEXT_DIMENSIONS,
                             color: Color::BLACK,
                             font: asset_store.font.clone(),
                         },
@@ -203,20 +216,6 @@ fn valid_spawn_location(
         }
     }
     false
-}
-
-pub fn despawn_cards(
-    mut commands: Commands,
-    keyboard_input: Res<ButtonInput<KeyCode>>,
-    query: Query<Entity, With<CardMarker>>,
-    mut board_state: ResMut<GameState>,
-) {
-    if keyboard_input.just_pressed(KeyCode::Enter) {
-        for entity in query.iter() {
-            commands.entity(entity).despawn_recursive();
-        }
-        board_state.clear();
-    }
 }
 
 fn get_next_card(card_index: &CardIndex, card_sequence: &Res<CardSequence>) -> Option<Card> {

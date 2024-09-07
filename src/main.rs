@@ -4,11 +4,13 @@ mod camera;
 pub mod card;
 mod coordinates;
 mod debug;
+mod keys;
 mod schedule;
 mod window;
 
 use bevy::prelude::*;
 use board::plugin::BoardPlugin;
+use keys::KeyMap;
 
 use crate::card::plugin::CardPlugin;
 use asset_loader::AssetLoaderPlugin;
@@ -20,6 +22,7 @@ use window::WindowPlugin;
 fn main() {
     App::new()
         .insert_resource(ClearColor(Color::rgb(0.5, 0.5, 0.5)))
+        .insert_resource(KeyMap::default())
         .insert_resource(AmbientLight {
             color: Color::default(),
             brightness: 0.15,

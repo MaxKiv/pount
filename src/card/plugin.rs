@@ -4,9 +4,9 @@ use crate::{board::restart::restart_game, schedule::InGameSet};
 
 use super::{
     sequence::generate_card_sequences,
-    show_next::{show_next_card, CurrentCardEntity},
+    show_next::{show_next_card, CurrentInfoBox},
     spawn::{spawn_card, CardIndex},
-    undo::{undo_last_move, LastPlacedCardRes},
+    undo::{undo_last_move, CardHistory},
 };
 
 pub struct CardPlugin;
@@ -14,8 +14,8 @@ pub struct CardPlugin;
 impl Plugin for CardPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(CardIndex::new(0));
-        app.insert_resource(CurrentCardEntity(None));
-        app.insert_resource(LastPlacedCardRes(None));
+        app.insert_resource(CurrentInfoBox(None));
+        app.insert_resource(CardHistory(None));
         app.add_systems(Startup, generate_card_sequences);
         app.add_systems(
             Update,

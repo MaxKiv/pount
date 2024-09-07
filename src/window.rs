@@ -2,6 +2,7 @@ use bevy::app::AppExit;
 use bevy::prelude::*;
 use bevy::window::WindowMode::Fullscreen;
 
+use crate::keys::KeyMap;
 use crate::schedule::InGameSet;
 
 pub struct WindowPlugin;
@@ -22,8 +23,18 @@ impl Plugin for WindowPlugin {
     }
 }
 
-fn handle_menu_keys(mut exit: EventWriter<AppExit>, input: Res<ButtonInput<KeyCode>>) {
-    if input.just_pressed(KeyCode::Escape) {
+fn handle_menu_keys(
+    mut exit: EventWriter<AppExit>,
+    input: Res<ButtonInput<KeyCode>>,
+    keymap: Res<KeyMap>,
+) {
+    if input.just_pressed(
+        keymap
+            .0
+            .get("quit")
+            .cloned()
+            .expect("Quit keymap not found"),
+    ) {
         exit.send(AppExit);
     }
 }

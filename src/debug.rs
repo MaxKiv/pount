@@ -1,7 +1,7 @@
 use bevy::{prelude::*, window::WindowResized};
 use std::any::type_name;
 
-use crate::{board::debug::log_gamestate, schedule::InGameSet};
+use crate::{board::debug::log_gamestate, keys::print_keymap, schedule::InGameSet};
 
 const LOG_PERIOD: f32 = 1.0;
 
@@ -28,6 +28,7 @@ impl Plugin for DebugPlugin {
                 // log_entity_position::<TextMarker>,
                 log_window_dimensions_on_resize,
                 log_gamestate,
+                print_keymap,
             )
                 .in_set(InGameSet::LogState),
         );

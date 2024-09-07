@@ -1,7 +1,10 @@
 use bevy::prelude::*;
 
-use crate::card::{
-    bundle::CardMarker, sequence::CardSequence, show_next::CurrentCardEntity, spawn::CardIndex,
+use crate::{
+    card::{
+        bundle::CardMarker, sequence::CardSequence, show_next::CurrentInfoBox, spawn::CardIndex,
+    },
+    keys::KeyMap,
 };
 
 use super::{bundle::GameState, win_condition::PlayerWinEntity};
@@ -15,9 +18,16 @@ pub fn restart_game(
     mut card_sequence: ResMut<CardSequence>,
     mut player_win_entity: ResMut<PlayerWinEntity>,
     mut card_index: ResMut<CardIndex>,
-    mut current_card_entity: ResMut<CurrentCardEntity>,
+    mut current_card_entity: ResMut<CurrentInfoBox>,
+    keymap: Res<KeyMap>,
 ) {
-    if keyboard_input.just_pressed(KeyCode::Enter) {
+    if keyboard_input.just_pressed(
+        keymap
+            .0
+            .get("restart")
+            .cloned()
+            .expect("Restart keymap not found"),
+    ) {
         // despawn player win notification
         if let Some(entity) = player_win_entity.0 {
             info!("despawning player win notification {:?}", entity);

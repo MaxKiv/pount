@@ -1,3 +1,5 @@
+- add fps counter
+
 - Camera should snap after card placement, make sure 1 empty tile is
     always at the edge
 
