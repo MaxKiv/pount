@@ -2,6 +2,7 @@ use bevy::prelude::*;
 
 pub const TEXT_DIMENSIONS: f32 = CARD_DIMENSIONS.x / 2.0;
 pub const CARD_TEXT_Z_OFFSET: f32 = 0.1;
+const STACK_OFFSET: f32 = 5.0;
 
 use crate::{
     asset_loader::AssetStore,
@@ -70,15 +71,19 @@ pub fn spawn_card(
                     let mut actual_card_spawn: ActuallyLogicalCoordinates =
                         card_spawn_board_coordinates.clone().into();
 
-                    // Update board_state
                     let (x, y, _) = card_spawn_board_coordinates.as_xys();
+
+                    // offset card placement based on number of cards currently on tile
+                    let num_cards = board_state.get_tile(x, y).cards.len();
+                    actual_card_spawn.transform.translation += Transform::from_xyz(
+                        STACK_OFFSET * num_cards as f32,
+                        STACK_OFFSET * num_cards as f32,
+                        num_cards as f32,
+                    )
+                    .translation;
+
+                    // Update board_state
                     board_state.get_tile_mut(x, y).cards.push(next_card);
-
-                    let z = board_state.get_tile(x, y).cards.len();
-
-                    let mut spawn_transform = actual_card_spawn.transform();
-                    spawn_transform.translation.z = z as f32;
-                    actual_card_spawn.set_transform(spawn_transform);
 
                     // Notify board state has changed
                     info!("Card placed, board state changed");
@@ -109,7 +114,7 @@ pub fn render_card(
                         custom_size: Some(CARD_DIMENSIONS),
                         ..Default::default()
                     },
-                    transform: actual_card_spawn.transform(),
+                    transform: actual_card_spawn.transform,
                     ..Default::default()
                 },
             },

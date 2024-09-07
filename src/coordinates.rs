@@ -25,7 +25,7 @@ impl LogicalCoordinates {
 // Coordinate space in logical screen pixels, with mirrored y axis
 #[derive(Clone)]
 pub struct ActuallyLogicalCoordinates {
-    transform: Transform,
+    pub transform: Transform,
 }
 
 impl std::fmt::Debug for ActuallyLogicalCoordinates {
@@ -39,10 +39,6 @@ impl std::fmt::Debug for ActuallyLogicalCoordinates {
 impl ActuallyLogicalCoordinates {
     pub fn new(transform: Transform) -> Self {
         Self { transform }
-    }
-
-    pub fn transform(&self) -> Transform {
-        self.transform
     }
 
     pub fn set_transform(&mut self, transform: Transform) {
@@ -88,7 +84,7 @@ impl BoardCoordinates {
 
 impl From<ActuallyLogicalCoordinates> for BoardCoordinates {
     fn from(value: ActuallyLogicalCoordinates) -> Self {
-        let tile = value.transform().translation / Vec3::new(TILE_SIZE, TILE_SIZE, 1.0).round();
+        let tile = value.transform.translation / Vec3::new(TILE_SIZE, TILE_SIZE, 1.0).round();
         Self::from_xyz(tile.x as usize, tile.y as usize, tile.z as usize)
     }
 }
