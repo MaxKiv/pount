@@ -18,33 +18,28 @@ const WIN_TEXT_BOX_Y: f32 = WIN_TEXT_FONT_SIZE * 3.0;
 
 use crate::{
     asset_loader::AssetStore,
-    board::bundle::GameBoard,
+    board::bundle::GameState,
     camera::{CAMERA_OFFSET_X, CAMERA_OFFSET_Y},
     card::{
         bundle::Card,
-        spawn::{CardIndex, CARD_TEXT_Z_OFFSET},
+        spawn::{CARD_TEXT_Z_OFFSET},
     },
 };
 
 use super::bundle::BOARD_SIZE;
-
-#[derive(Resource, Debug)]
-pub struct StateChanged(pub bool);
 
 #[derive(Resource)]
 pub struct PlayerWinEntity(pub Option<Entity>);
 
 pub fn check_wincondition(
     mut commands: Commands,
-    board_state: Res<GameBoard>,
-    mut board_state_changed: ResMut<StateChanged>,
+    board_state: Res<GameState>,
     asset_store: Res<AssetStore>,
     windows: Query<&Window>,
     mut player_win_entity: ResMut<PlayerWinEntity>,
 ) {
-    if board_state_changed.0 {
+    if board_state.is_changed() {
         info!("Board state changed, checking wincondition");
-        board_state_changed.0 = false;
 
         for (y, tiles) in board_state.board().iter().enumerate() {
             for (x, tile) in tiles.iter().enumerate() {
@@ -119,7 +114,7 @@ fn check_card_neighbours(
     top_card: Card,
     x: usize,
     y: usize,
-    board_state: &GameBoard,
+    board_state: &GameState,
 ) -> Option<Vec<Card>> {
     for (dx, dy) in NEIGHBOURS.iter() {
         'check_color_streak: for card_number in 1i32..=CARDS_TO_WIN {

@@ -2,7 +2,7 @@ use bevy::prelude::*;
 
 use crate::{
     asset_loader::AssetStore,
-    board::win_condition::StateChanged,
+    board::bundle::GameState,
     camera::{CAMERA_OFFSET_X, CAMERA_OFFSET_Y},
     card::spawn::render_card,
     coordinates::ActuallyLogicalCoordinates,
@@ -20,13 +20,13 @@ pub struct CurrentCardEntity(pub Option<Entity>);
 pub fn show_next_card(
     card_index: Res<CardIndex>,
     card_sequence: Res<CardSequence>,
-    board_state_changed: Res<StateChanged>,
+    board_state: Res<GameState>,
     asset_store: Res<AssetStore>,
     mut commands: Commands,
     windows: Query<&Window>,
-    mut current_card_entity: ResMut<CurrentCardEntity>,
+    mut current_card_entity: ResMut<CurrentCardEntity>, // Inject the resource
 ) {
-    if board_state_changed.0 {
+    if board_state.is_changed() {
         info!("Board state changed, showing next card");
 
         // Despawn the previous card entity if it exists

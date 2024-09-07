@@ -9,14 +9,16 @@ type Board = [[Tile; BOARD_SIZE]; BOARD_SIZE];
 
 // TODO remove the pub from Board, to make the GameBoard data structure opaque
 #[derive(Resource)]
-pub struct GameBoard {
+pub struct GameState {
     pub board: Board,
+    // TODO it does not seem very clean to pass a bool everywhere just to see if this was the first
+    // move
     pub empty: bool,
 }
 
-impl GameBoard {
+impl GameState {
     pub fn reset() -> Self {
-        let empty_board: GameBoard = GameBoard {
+        let empty_board: GameState = GameState {
             board: core::array::from_fn(|_| core::array::from_fn(|_| Tile { cards: Vec::new() })),
             empty: true,
         };
@@ -48,7 +50,7 @@ impl GameBoard {
     }
 }
 
-impl std::fmt::Debug for GameBoard {
+impl std::fmt::Debug for GameState {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         for (y, tiles) in self.board().iter().enumerate() {
             for (x, tile) in tiles.iter().enumerate() {
@@ -68,6 +70,6 @@ pub struct Tile {
 
 // System to initialize the game board
 pub fn setup_board(mut commands: Commands) {
-    let empty_board = GameBoard::reset();
+    let empty_board = GameState::reset();
     commands.insert_resource(empty_board);
 }

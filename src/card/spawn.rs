@@ -7,14 +7,17 @@ const STACK_OFFSET: f32 = 5.0;
 use crate::{
     asset_loader::AssetStore,
     board::{
-        bundle::{GameBoard, BOARD_SIZE},
-        win_condition::{StateChanged, NEIGHBOURS},
+        bundle::{GameState, BOARD_SIZE},
+        win_condition::NEIGHBOURS,
     },
-    card::bundle::{Card, CardBundle, CardMarker, CARD_DIMENSIONS},
+    card::{
+        bundle::{Card, CardBundle, CardMarker, CARD_DIMENSIONS},
+        undo::LastPlacedCard,
+    },
     coordinates::{ActuallyLogicalCoordinates, BoardCoordinates, LogicalCoordinates},
 };
 
-use super::sequence::CardSequence;
+use super::{sequence::CardSequence, undo::LastPlacedCardRes};
 
 pub const CARD_COLORS: [Color; 4] = [
     Color::SALMON,
@@ -44,10 +47,10 @@ pub fn spawn_card(
     keyboard_input: Res<ButtonInput<KeyCode>>,
     windows: Query<&Window>,
     mut card_index: ResMut<CardIndex>,
-    mut board_state: ResMut<GameBoard>,
+    mut board_state: ResMut<GameState>,
     asset_store: Res<AssetStore>,
     card_sequence: Res<CardSequence>,
-    mut board_state_changed: ResMut<StateChanged>,
+    mut last_placed_card: ResMut<LastPlacedCardRes>,
 ) {
     if keyboard_input.just_pressed(KeyCode::Space) {
         if let Some(cursor_position) = windows.single().cursor_position() {
@@ -85,13 +88,20 @@ pub fn spawn_card(
                     // Update board_state
                     board_state.get_tile_mut(x, y).cards.push(next_card);
 
-                    // Notify board state has changed
-                    info!("Card placed, board state changed");
-                    board_state_changed.0 = true;
                     card_index.index += 1;
 
                     // Render card
-                    let _ = render_card(actual_card_spawn, next_card, &asset_store, &mut commands);
+                    let entity =
+                        render_card(actual_card_spawn, next_card, &asset_store, &mut commands);
+
+                    // Update last_placed_card
+                    let board_coordinates = card_spawn_board_coordinates;
+                    *last_placed_card = LastPlacedCardRes(Some(LastPlacedCard {
+                        entity,
+                        board_coordinates,
+                    }));
+
+                    info!("Card placed, board state changed");
                 }
             }
         }
@@ -147,7 +157,7 @@ pub fn render_card(
 fn valid_spawn_location(
     card_spawn_board_coordinates: &BoardCoordinates,
     next_card: &Card,
-    board_state: &GameBoard,
+    board_state: &GameState,
 ) -> bool {
     // First card is always valid
     if board_state.empty {
@@ -199,7 +209,7 @@ pub fn despawn_cards(
     mut commands: Commands,
     keyboard_input: Res<ButtonInput<KeyCode>>,
     query: Query<Entity, With<CardMarker>>,
-    mut board_state: ResMut<GameBoard>,
+    mut board_state: ResMut<GameState>,
 ) {
     if keyboard_input.just_pressed(KeyCode::Enter) {
         for entity in query.iter() {

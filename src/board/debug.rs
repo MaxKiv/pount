@@ -1,10 +1,10 @@
 use bevy::prelude::*;
 
-use crate::{coordinates::BoardCoordinates, debug::LogTimer};
+use crate::debug::LogTimer;
 
-use super::bundle::GameBoard;
+use super::bundle::GameState;
 
-pub fn log_gamestate(time: Res<Time>, mut timer: ResMut<LogTimer>, board_state: Res<GameBoard>) {
+pub fn log_gamestate(time: Res<Time>, mut timer: ResMut<LogTimer>, board_state: Res<GameState>) {
     if timer.0.tick(time.delta()).finished() {
         // for (y, tiles) in board_state.board().iter().enumerate() {
         //     for (x, tile) in tiles.iter().enumerate() {

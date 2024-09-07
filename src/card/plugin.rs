@@ -6,6 +6,7 @@ use super::{
     sequence::generate_card_sequences,
     show_next::{show_next_card, CurrentCardEntity},
     spawn::{spawn_card, CardIndex},
+    undo::{undo_last_move, LastPlacedCardRes},
 };
 
 pub struct CardPlugin;
@@ -14,10 +15,11 @@ impl Plugin for CardPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(CardIndex::new(0));
         app.insert_resource(CurrentCardEntity(None));
+        app.insert_resource(LastPlacedCardRes(None));
         app.add_systems(Startup, generate_card_sequences);
         app.add_systems(
             Update,
-            (spawn_card, restart_game, show_next_card)
+            (spawn_card, undo_last_move, restart_game, show_next_card)
                 .chain()
                 .in_set(InGameSet::MutateBoard),
         );
