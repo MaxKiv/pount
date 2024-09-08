@@ -1,4 +1,8 @@
-use bevy::{prelude::*, window::WindowResized};
+use bevy::{
+    diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin},
+    prelude::*,
+    window::WindowResized,
+};
 use std::any::type_name;
 
 use crate::{board::debug::log_gamestate, keys::print_keymap, schedule::InGameSet};
@@ -19,6 +23,10 @@ fn setup_timer(mut commands: Commands) {
 
 impl Plugin for DebugPlugin {
     fn build(&self, app: &mut App) {
+        // Add FPS log to console
+        app.add_plugins(FrameTimeDiagnosticsPlugin);
+        app.add_plugins(LogDiagnosticsPlugin::default());
+
         app.add_systems(
             Update,
             (
@@ -32,6 +40,7 @@ impl Plugin for DebugPlugin {
             )
                 .in_set(InGameSet::LogState),
         );
+
         app.add_systems(Startup, setup_timer);
     }
 }
