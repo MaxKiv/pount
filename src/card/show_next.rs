@@ -1,4 +1,5 @@
-use bevy::{prelude::*, window::WindowResized};
+use bevy::window::WindowResized;
+use bevy::{ecs::system::SystemParam, prelude::*};
 
 use crate::{
     asset_loader::AssetStore,
@@ -8,45 +9,53 @@ use crate::{
     coordinates::ActuallyLogicalCoordinates,
 };
 
+use super::bundle::Card;
 use super::{sequence::CardSequence, spawn::CardIndex};
 
-const NEXT_CARD_X_WINDOW_WIDTH_PERCENTAGE: f32 = 0.9;
-const NEXT_CARD_Y_WINDOW_WIDTH_PERCENTAGE: f32 = 0.8;
+/// Percentage of the window width at width the next card infobox is rendered
+const NEXT_CARD_WINDOW_WIDTH_PERCENTAGE: f32 = 0.9;
+/// Percentage of the window height at width the next card infobox is rendered
+const NEXT_CARD_WINDOW_HEIGHT_PERCENTAGE: f32 = 0.8;
+/// Z offset at which the next card infobox is rendered
 const NEXT_CARD_Z: f32 = 100.0;
+/// Y offset at which the next card infobox text is rendered, relative to the infobox transform
 const NEXT_CARD_TEXT_Y_OFFSET: f32 = 80.0;
 
-// You shall be known as the infobox, purveyor of informations, clairvoyeur of the card_sequence
+/// You shall be known as the infobox, purveyor of informations, clairvoyeur of the card_sequence
 #[derive(Resource)]
 pub struct CurrentInfoBox(pub Option<Entity>);
 
-#[allow(clippy::too_many_arguments)]
-pub fn show_next_card(
-    card_index: Res<CardIndex>,
-    card_sequence: Res<CardSequence>,
-    board_state: Res<GameState>,
-    asset_store: Res<AssetStore>,
-    mut commands: Commands,
-    mut current_infobox: ResMut<CurrentInfoBox>,
-    resize_event_reader: EventReader<WindowResized>,
-    windows: Query<&Window>,
-) {
-    if board_state.is_changed() || !resize_event_reader.is_empty() {
-        info!("Board state changed, showing next card");
+/// Group of all system parameters used to show the next card infobox
+#[derive(SystemParam)]
+pub struct NextCardInfoContext<'w, 's> {
+    pub card_index: Res<'w, CardIndex>,
+    pub card_sequence: Res<'w, CardSequence>,
+    pub board_state: Res<'w, GameState>,
+    pub asset_store: Res<'w, AssetStore>,
+    pub current_infobox: ResMut<'w, CurrentInfoBox>,
+    pub windows: Query<'w, 's, &'static Window>,
+    pub resize_event_reader: EventReader<'w, 's, WindowResized>,
+}
 
-        let window = windows.single();
+/// Sytem to show players the next card in the sequence
+/// Without this they will not know what card they are about to place
+pub fn show_infobox(mut context: NextCardInfoContext, mut commands: Commands) {
+    if should_refresh_infobox(context.board_state, &context.resize_event_reader) {
+        let window = context.windows.single();
 
-        render_next_card_infobox(
-            card_index,
-            card_sequence,
+        update_infobox(
+            context.card_index,
+            context.card_sequence,
             window,
-            &asset_store,
+            &context.asset_store,
             &mut commands,
-            &mut current_infobox,
+            &mut context.current_infobox,
         );
     }
 }
 
-fn render_next_card_infobox(
+/// helper function to update the infobox: despawn the old and render the new
+fn update_infobox(
     card_index: Res<CardIndex>,
     card_sequence: Res<CardSequence>,
     window: &Window,
@@ -59,17 +68,37 @@ fn render_next_card_infobox(
         commands.entity(entity).despawn_recursive();
     }
 
+    // Spawn the new infobox, but only if the card sequence is not empty
     if let Some(next_card) = card_sequence.cards.get(card_index.index).cloned() {
-        let x = NEXT_CARD_X_WINDOW_WIDTH_PERCENTAGE * window.width() + CAMERA_OFFSET_X;
-        let y = NEXT_CARD_Y_WINDOW_WIDTH_PERCENTAGE * window.height() + CAMERA_OFFSET_Y;
-
+        let x = NEXT_CARD_WINDOW_WIDTH_PERCENTAGE * window.width() + CAMERA_OFFSET_X;
+        let y = NEXT_CARD_WINDOW_HEIGHT_PERCENTAGE * window.height() + CAMERA_OFFSET_Y;
         let transform = Transform::from_xyz(x, y, NEXT_CARD_Z);
         let coordinates = ActuallyLogicalCoordinates::new(transform);
 
         info!("Rendering next card {:?} at {:?}", next_card, coordinates);
 
-        let next_card_entity = render_card(coordinates, next_card, asset_store, commands);
-        commands.entity(next_card_entity).with_children(|parent| {
+        render_infobox(
+            coordinates,
+            next_card,
+            asset_store,
+            commands,
+            current_infobox,
+        );
+    }
+}
+
+/// Renders a new infobox showing the [next_card] at [coordinates]
+fn render_infobox(
+    coordinates: ActuallyLogicalCoordinates,
+    next_card: Card,
+    asset_store: &AssetStore,
+    commands: &mut Commands,
+    current_infobox: &mut CurrentInfoBox,
+) {
+    let mut new_infobox = render_card(coordinates, next_card, asset_store, commands);
+    new_infobox = commands
+        .entity(new_infobox)
+        .with_children(|parent| {
             parent.spawn((
                 Text2dBundle {
                     text: Text::from_section(
@@ -80,15 +109,22 @@ fn render_next_card_infobox(
                             font: asset_store.font.clone(),
                         },
                     ),
-                    // Overlay the text on the card by setting its Z value
+                    // Overlay the text on the card
                     transform: Transform::from_xyz(0.0, NEXT_CARD_TEXT_Y_OFFSET, NEXT_CARD_Z),
                     ..Default::default()
                 },
                 TextMarker,
             ));
-        });
+        })
+        .id();
 
-        //
-        current_infobox.0 = Some(next_card_entity);
-    }
+    current_infobox.0 = Some(new_infobox);
+}
+
+/// Update infobox when board state changes or window is resized
+fn should_refresh_infobox(
+    board_state: Res<GameState>,
+    resize_event_reader: &EventReader<WindowResized>,
+) -> bool {
+    board_state.is_changed() || !resize_event_reader.is_empty()
 }
