@@ -1,10 +1,10 @@
-use bevy::prelude::*;
+use bevy::{ecs::system::SystemParam, prelude::*};
 
 pub const CARD_TEXT_DIMENSIONS: f32 = CARD_DIMENSIONS.x / 2.0;
 pub const CARD_TEXT_Z_OFFSET: f32 = 0.1;
 pub const CARD_DIMENSIONS: Vec2 = Vec2::new(100.0, 100.0);
 
-const STACK_OFFSET: f32 = 5.0;
+const CARD_STACK_OFFSET: f32 = 5.0;
 
 use crate::{
     asset_loader::AssetStore,
@@ -22,94 +22,142 @@ use crate::{
 
 use super::{sequence::CardSequence, undo::CardHistory};
 
-// Tracks current card index for the card_sequence
+/// Tracks current position in the [`CardSequence`]
 #[derive(Resource, Default)]
 pub struct CardIndex {
     pub index: usize,
 }
 
+/// Marker component for text
 #[derive(Component, Debug)]
 pub struct TextMarker;
 
-#[allow(clippy::too_many_arguments)]
-pub fn spawn_card(
-    mut commands: Commands,
-    keyboard_input: Res<ButtonInput<KeyCode>>,
-    windows: Query<&Window>,
-    mut card_index: ResMut<CardIndex>,
-    mut board_state: ResMut<GameState>,
-    asset_store: Res<AssetStore>,
-    card_sequence: Res<CardSequence>,
-    mut card_history: ResMut<CardHistory>,
-    keymap: Res<KeyMap>,
-) {
-    if keyboard_input.just_pressed(
-        keymap
-            .0
-            .get("spawn")
-            .cloned()
-            .expect("Spawn keymap not found"),
-    ) {
-        if let Some(cursor_position) = windows.single().cursor_position() {
-            // massage coordinates a bit
-            let logical_coordinates = LogicalCoordinates::from_cursor_position(cursor_position);
-            let game_coordinates = ActuallyLogicalCoordinates::from_logical(
-                logical_coordinates,
-                windows.single().height(),
-            );
-            let card_spawn_board_coordinates: BoardCoordinates = game_coordinates.clone().into();
+/// Group of all system parameters used to spawn the next card
+#[derive(SystemParam)]
+pub struct SpawnCardContext<'w, 's> {
+    pub keymap: Res<'w, KeyMap>,
+    pub windows: Query<'w, 's, &'static Window>,
+    pub card_index: ResMut<'w, CardIndex>,
+    pub board_state: ResMut<'w, GameState>,
+    pub asset_store: Res<'w, AssetStore>,
+    pub card_sequence: Res<'w, CardSequence>,
+    pub card_history: ResMut<'w, CardHistory>,
+    pub keyboard_input: Res<'w, ButtonInput<KeyCode>>,
+}
 
-            if let Some(next_card) = get_next_card(&card_index, &card_sequence) {
-                // check if player clicked a valid location to spawn a new card
-                if valid_spawn_location(
-                    &card_spawn_board_coordinates,
-                    &next_card,
-                    board_state.as_ref(),
-                ) {
-                    info!("spawning card at: {:?}", card_spawn_board_coordinates);
+/// Spawns the next [`Card`] in the [`CardSequence`] on the tile closest to the current cursor location
+pub fn spawn_card(mut commands: Commands, mut context: SpawnCardContext) {
+    if should_spawn_card(&context.keyboard_input, &context.keymap) {
+        let window = context.windows.single();
 
-                    let mut actual_card_spawn: ActuallyLogicalCoordinates =
-                        card_spawn_board_coordinates.clone().into();
+        // Get cursor position if cursor is in game window
+        if let Some(cursor_position) = window.cursor_position() {
+            let spawn_coordinates = cursor_position_to_boardcoordinates(cursor_position, window);
 
-                    let (x, y, _) = card_spawn_board_coordinates.as_xys();
+            // Get the next card in the sequence, if there is any left
+            if let Some(next_card) = get_next_card(&context.card_index, &context.card_sequence) {
+                if valid_spawn_location(&spawn_coordinates, &next_card, &context.board_state) {
+                    update_board_state(
+                        &spawn_coordinates,
+                        &next_card,
+                        &mut context.board_state,
+                        &mut context.card_index,
+                    );
 
-                    // offset card placement based on number of cards currently on tile
-                    let num_cards = board_state.get_tile(x, y).cards.len();
-                    actual_card_spawn.transform.translation += Transform::from_xyz(
-                        STACK_OFFSET * num_cards as f32,
-                        STACK_OFFSET * num_cards as f32,
-                        num_cards as f32,
-                    )
-                    .translation;
-
-                    // Update board_state
-                    board_state.get_tile_mut(x, y).cards.push(next_card);
-
-                    card_index.index += 1;
-
-                    // Render card
-                    let entity =
-                        render_card(actual_card_spawn, next_card, &asset_store, &mut commands);
-
-                    // Update card history
-                    let board_coordinates = card_spawn_board_coordinates;
-                    let last_card = PlacedCard {
-                        entity,
-                        board_coordinates,
-                    };
-                    if card_history.0.is_some() {
-                        card_history.0.as_mut().unwrap().push(last_card);
-                    } else {
-                        card_history.0 = Some(vec![last_card]);
-                    }
-
-                    info!("Card placed, board state changed");
+                    render_next_card(
+                        spawn_coordinates,
+                        next_card,
+                        &context.board_state,
+                        &context.asset_store,
+                        &mut commands,
+                        &mut context.card_history,
+                    );
                 }
             }
         }
     }
 }
 
+/// Render the next [`Card`] in the [`CardSequence`] and update the [`CardHistory`]
+fn render_next_card(
+    spawn_coordinates: BoardCoordinates,
+    next_card: Card,
+    board_state: &GameState,
+    asset_store: &AssetStore,
+    commands: &mut Commands,
+    card_history: &mut CardHistory,
+) {
+    // offset card placement based on number of cards currently on tile
+    let actual_card_spawn = handle_cardstack_offset(&spawn_coordinates, board_state);
+
+    // Render card
+    let entity = render_card(actual_card_spawn, next_card, asset_store, commands);
+
+    // Update card history
+    update_card_history(entity, card_history, spawn_coordinates);
+}
+
+/// Update the [`CardHistory`] with the newly rendered [`Card`]s [`BoardCoordinates`] and [`Entity`]
+fn update_card_history(
+    entity: Entity,
+    card_history: &mut CardHistory,
+    spawn_coordinates: BoardCoordinates,
+) {
+    let board_coordinates = spawn_coordinates;
+    let last_card = PlacedCard {
+        entity,
+        board_coordinates,
+    };
+    if card_history.0.is_some() {
+        card_history.0.as_mut().unwrap().push(last_card);
+    } else {
+        card_history.0 = Some(vec![last_card]);
+    }
+}
+
+/// Offset the given [`BoardCoordinates`] in the (x,y) dimension based on the number of cards already present on the [`Tile`]
+fn handle_cardstack_offset(
+    spawn_coordinates: &BoardCoordinates,
+    board_state: &GameState,
+) -> ActuallyLogicalCoordinates {
+    // Get number of cards on selected tile
+    let (x, y, _) = spawn_coordinates.as_xys();
+    let num_cards = board_state.get_tile(x, y).cards.len();
+
+    // Offset given spawn coordinates based on number of cards already on tile
+    let mut offset_coordinates: ActuallyLogicalCoordinates = spawn_coordinates.clone().into();
+    offset_coordinates.transform.translation += Transform::from_xyz(
+        CARD_STACK_OFFSET * num_cards as f32,
+        CARD_STACK_OFFSET * num_cards as f32,
+        num_cards as f32,
+    )
+    .translation;
+
+    offset_coordinates
+}
+
+/// Update the [`GameState`] with this new [`Card`] and increment [`CardIndex`]
+fn update_board_state(
+    spawn_coordinates: &BoardCoordinates,
+    next_card: &Card,
+    board_state: &mut GameState,
+    card_index: &mut CardIndex,
+) {
+    let (x, y, _) = spawn_coordinates.as_xys();
+    board_state.get_tile_mut(x, y).cards.push(*next_card);
+    card_index.index += 1;
+}
+
+/// Return the tile in [`BoardCoordinates`] that the cursor is hovering over, snapping to the nearest tile
+fn cursor_position_to_boardcoordinates(cursor_position: Vec2, window: &Window) -> BoardCoordinates {
+    let logical_coordinates = LogicalCoordinates::from_cursor_position(cursor_position);
+    let game_coordinates =
+        ActuallyLogicalCoordinates::from_logical(logical_coordinates, window.height());
+    let card_spawn_board_coordinates: BoardCoordinates = game_coordinates.clone().into();
+    card_spawn_board_coordinates
+}
+
+/// Render a [`Card`] at [`ActuallyLogicalCoordinates`]
 pub fn render_card(
     actual_card_spawn: ActuallyLogicalCoordinates,
     card: Card,
@@ -155,9 +203,9 @@ pub fn render_card(
     entity
 }
 
-// are the given new card spawning coordinates next to a
+/// Is the hovered tile a valid location to spawn a new card on?
 fn valid_spawn_location(
-    card_spawn_board_coordinates: &BoardCoordinates,
+    spawn_coordinates: &BoardCoordinates,
     next_card: &Card,
     board_state: &GameState,
 ) -> bool {
@@ -167,7 +215,7 @@ fn valid_spawn_location(
         return true;
     }
 
-    let (x, y, _) = card_spawn_board_coordinates.as_xys();
+    let (x, y, _) = spawn_coordinates.as_xys();
     // Is there already a Card on this location, with lower value?
     if let Some(top_card) = board_state.get_tile(x, y).cards.last() {
         if next_card.value > top_card.value {
@@ -207,6 +255,18 @@ fn valid_spawn_location(
     false
 }
 
+/// Get next [`Card`] in the [`CardSequence`]
 fn get_next_card(card_index: &CardIndex, card_sequence: &Res<CardSequence>) -> Option<Card> {
     card_sequence.cards.get(card_index.index).cloned()
+}
+
+/// Should a new [`Card`] be spawned?
+fn should_spawn_card(keyboard_input: &Res<ButtonInput<KeyCode>>, keymap: &Res<KeyMap>) -> bool {
+    keyboard_input.just_pressed(
+        keymap
+            .0
+            .get("spawn")
+            .cloned()
+            .expect("Spawn keymap not found"),
+    )
 }
