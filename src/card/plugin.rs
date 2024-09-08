@@ -13,7 +13,7 @@ pub struct CardPlugin;
 
 impl Plugin for CardPlugin {
     fn build(&self, app: &mut App) {
-        app.insert_resource(CardIndex::new(0));
+        app.insert_resource(CardIndex::default());
         app.insert_resource(CurrentInfoBox(None));
         app.insert_resource(CardHistory(None));
         app.add_systems(Startup, generate_card_sequences);

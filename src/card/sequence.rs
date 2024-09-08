@@ -1,37 +1,35 @@
-use crate::card::spawn::CARD_COLORS;
-
 use bevy::prelude::*;
 use rand::prelude::SliceRandom;
 
-use super::bundle::Card;
+use super::bundle::{Card, CARD_COLORS};
 
 const CARD_VALUES: std::ops::RangeInclusive<i32> = 1..=9;
-const NUM_CARDS_PER_VALUE: usize = 2;
+const VALUES_PER_COLOR: usize = 2;
 
-#[derive(Debug, Resource)]
+/// A Sequence of [`Card`] used to draw from each turn
+#[derive(Debug, Resource, Default)]
 pub struct CardSequence {
     pub cards: Vec<Card>,
 }
 
 impl CardSequence {
-    fn new() -> Self {
-        Self { cards: Vec::new() }
-    }
-
-    // Generate a sequence of cards of given color with randomized values
+    /// Generate a sequence of cards of given color with randomized values
     fn generate_color(color: Color) -> Vec<Card> {
         let mut rng = rand::thread_rng();
 
-        // Collect the numbers into a vector by repeating CARD_VALUES NUM_CARDS_PER_VALUE times
+        // Duplicate the range so we get the right number of values per color
         let mut numbers: Vec<i32> = Vec::new();
-        for _ in 0..NUM_CARDS_PER_VALUE {
+        for _ in 0..VALUES_PER_COLOR {
             numbers.extend(CARD_VALUES.clone());
         }
 
+        // Map the range into a sequence of [`Card`]
         let mut cards: Vec<Card> = numbers
             .into_iter()
             .map(|value| Card { value, color })
             .collect();
+
+        // Randomize the [`CardSequence`]
         cards.shuffle(&mut rng);
 
         cards
@@ -40,7 +38,7 @@ impl CardSequence {
     /// Generate a CardSequence for a single player
     pub fn generate_player_sequence(color_1: Color, color_2: Color) -> Self {
         let mut rng = rand::thread_rng();
-        let mut sequence = CardSequence::new();
+        let mut sequence = CardSequence::default();
 
         for card in Self::generate_color(color_1) {
             sequence.cards.push(card);
@@ -55,17 +53,18 @@ impl CardSequence {
 
     /// Generate a CardSequence
     pub fn generate_full_sequence() -> Self {
-        let sequences = vec![
-            CardSequence::generate_player_sequence(CARD_COLORS[0], CARD_COLORS[1]),
-            CardSequence::generate_player_sequence(CARD_COLORS[2], CARD_COLORS[3]),
-        ];
+        let mut sequences: Vec<CardSequence> = Vec::new();
+
+        for chunk in CARD_COLORS.chunks(2) {
+            sequences.push(CardSequence::generate_player_sequence(chunk[0], chunk[1]));
+        }
 
         CardSequence::flatten_interleaved(sequences)
     }
 
-    //  a Vec<CardSequence> into a CardSequence by interleaving each CardSequence in the Vec
+    /// Turn a [`Vec<CardSequence>`] into a [`CardSequence`] by interleaving each [`CardSequence`] in the [`Vec`]
     fn flatten_interleaved(vec: Vec<CardSequence>) -> CardSequence {
-        let mut out = CardSequence::new();
+        let mut out = CardSequence::default();
 
         let max_len = vec.iter().map(|seq| seq.cards.len()).max().unwrap_or(0);
 
@@ -81,6 +80,7 @@ impl CardSequence {
     }
 }
 
+/// System to generate a new [`CardSequence`]
 pub fn generate_card_sequences(mut commands: Commands) {
     let sequence = CardSequence::generate_full_sequence();
     // TODO extend this for different number of players

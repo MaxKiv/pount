@@ -1,7 +1,9 @@
-use bevy::{prelude::*, render::render_resource::PipelineLayout};
+use bevy::prelude::*;
 
 pub const CARD_TEXT_DIMENSIONS: f32 = CARD_DIMENSIONS.x / 2.0;
 pub const CARD_TEXT_Z_OFFSET: f32 = 0.1;
+pub const CARD_DIMENSIONS: Vec2 = Vec2::new(100.0, 100.0);
+
 const STACK_OFFSET: f32 = 5.0;
 
 use crate::{
@@ -11,7 +13,7 @@ use crate::{
         win_condition::NEIGHBOURS,
     },
     card::{
-        bundle::{Card, CardBundle, CardMarker, CARD_DIMENSIONS},
+        bundle::{Card, CardBundle, CardMarker},
         undo::PlacedCard,
     },
     coordinates::{ActuallyLogicalCoordinates, BoardCoordinates, LogicalCoordinates},
@@ -20,23 +22,10 @@ use crate::{
 
 use super::{sequence::CardSequence, undo::CardHistory};
 
-pub const CARD_COLORS: [Color; 4] = [
-    Color::SALMON,
-    Color::GOLD,
-    Color::AQUAMARINE,
-    Color::SEA_GREEN,
-];
-
 // Tracks current card index for the card_sequence
-#[derive(Resource)]
+#[derive(Resource, Default)]
 pub struct CardIndex {
     pub index: usize,
-}
-
-impl CardIndex {
-    pub fn new(index: usize) -> Self {
-        Self { index }
-    }
 }
 
 #[derive(Component, Debug)]

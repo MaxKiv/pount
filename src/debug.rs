@@ -38,6 +38,7 @@ impl Plugin for DebugPlugin {
                 log_gamestate,
                 print_keymap,
             )
+                .chain()
                 .in_set(InGameSet::LogState),
         );
 
@@ -45,19 +46,8 @@ impl Plugin for DebugPlugin {
     }
 }
 
-// fn log_card(
-//     query: Query<(Entity, &BoardPosition, &CardBundle), With<CardMarker>>,
-//     time: Res<Time>,
-//     mut timer: ResMut<LogTimer>,
-// ) {
-//     if timer.0.tick(time.delta()).finished() {
-//         for (_, position, card) in query.iter() {
-//             info!("{:?} at position: {:?}", card, position.pos());
-//         }
-//     }
-// }
-
-// subsystem to log position of an entity with component T
+/// system to log position of an entity with component T
+#[allow(unused)]
 fn log_entity_position<T: Component>(
     query: Query<(Entity, &Transform), With<T>>,
     time: Res<Time>,
@@ -74,6 +64,8 @@ fn log_entity_position<T: Component>(
     }
 }
 
+/// system to log window sizes to the console
+#[allow(unused)]
 fn log_window_dimensions_on_resize(
     mut resize_event_reader: EventReader<WindowResized>,
     windows: Query<&Window>,
@@ -92,6 +84,8 @@ fn log_window_dimensions_on_resize(
     }
 }
 
+/// system to log visible entities
+#[allow(unused)]
 fn log_entity_visibility<T: Component>(
     query: Query<(Entity, &Transform, &Visibility), With<T>>,
     time: Res<Time>,
